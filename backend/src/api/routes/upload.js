@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { upload } = require('../cloudinaryConfig');
+const { upload } = require('../../config/cloudinaryConfig');
 
 // POST /api/upload
 // Uploads an image to Cloudinary and returns the URL

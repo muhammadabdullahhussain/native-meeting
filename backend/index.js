@@ -10,10 +10,10 @@ app.use(express.json());
 app.use(cors());
 
 // Routes
-const authRoutes = require('./routes/auth');
-const uploadRoutes = require('./routes/upload');
-const userRoutes = require('./routes/users');
-const errorMiddleware = require('./middleware/errorMiddleware');
+const authRoutes = require('./src/api/routes/auth');
+const uploadRoutes = require('./src/api/routes/upload');
+const userRoutes = require('./src/api/routes/users');
+const errorMiddleware = require('./src/api/middleware/errorMiddleware');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
