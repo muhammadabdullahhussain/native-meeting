@@ -21,7 +21,7 @@ export default function RootLayout({
           name="description"
           content="Modern social discovery for real people, nearby."
         />
-        <link rel="icon" href="/icon.svg" />
+        <link rel="icon" href="/favicon.ico" />
       </head>
       <body className="font-sans text-white bg-bg relative">
         <div className="glow-bg" />

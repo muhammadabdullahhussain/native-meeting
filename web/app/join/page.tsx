@@ -1,36 +1,95 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, UserPlus, Gift } from "lucide-react";
+import {
+  ArrowRight,
+  UserPlus,
+  Gift,
+  Copy,
+  Check,
+  Share2,
+  Sparkles,
+  ShieldCheck,
+  MapPin,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 function JoinInner() {
   const searchParams = useSearchParams();
-  const code = searchParams.get("code") || searchParams.get("ref");
+  const urlCode = searchParams.get("code") || searchParams.get("ref") || "";
+  const [code, setCode] = useState(urlCode);
   const [inviterName, setInviterName] = useState("A friend");
+  const [inviter, setInviter] = useState<{
+    name: string;
+    username?: string;
+    avatar?: string;
+    city?: string | null;
+    headline?: string | null;
+    referralCount?: number;
+    unlockedGroupPasses?: number;
+    isVerified?: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [tryingOpen, setTryingOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const apiBase = useMemo(() => {
+    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+    if (envBase) return envBase;
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host === "localhost" || host === "127.0.0.1") {
+        return "http://localhost:5001";
+      }
+    }
+    return "https://interesta-backend.onrender.com";
+  }, []);
 
   useEffect(() => {
-    if (code) {
-      fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "https://interesta-backend.onrender.com"}/api/auth/referral/validate/${code}`,
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.data?.referrerName) {
-            setInviterName(data.data.referrerName);
-          }
-        })
-        .catch((err) => console.error(err))
-        .finally(() => setLoading(false));
-    } else {
+    setCode(urlCode);
+  }, [urlCode]);
+
+  useEffect(() => {
+    if (!code) {
       setLoading(false);
+      return;
     }
-  }, [code]);
+    setLoading(true);
+    setError(null);
+    fetch(`${apiBase}/api/auth/referral/validate/${code}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          const d = data.data;
+          const safeName = d.referrerName || "A friend";
+          setInviterName(safeName);
+          setInviter({
+            name: safeName,
+            username: d.referrerUsername,
+            avatar: d.referrerAvatar,
+            city: d.referrerCity || null,
+            headline: d.referrerHeadline || null,
+            referralCount: d.referralCount || 0,
+            unlockedGroupPasses: d.unlockedGroupPasses || 0,
+            isVerified: d.isVerified || false,
+          });
+        } else {
+          setInviterName("A friend");
+        }
+      })
+      .catch(() => {
+        setInviterName("A friend");
+        setError(
+          "Referral code could not be verified. You can still continue.",
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [code, apiBase]);
 
   const handleOpenApp = () => {
     if (!code) {
@@ -44,7 +103,7 @@ function JoinInner() {
     const fallbackUrl = "/";
 
     const start = Date.now();
-    const timeout = setTimeout(() => {
+    setTimeout(() => {
       if (Date.now() - start < 1600) {
         window.location.href = fallbackUrl;
       }
@@ -67,70 +126,233 @@ function JoinInner() {
     setTimeout(() => setTryingOpen(false), 2500);
   };
 
+  const handleCopy = async () => {
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Fallback
+      alert("Copy failed. Select and copy the code manually.");
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Join me on Interesta",
+          text: "Use my referral code to join Interesta.",
+          url: shareUrl,
+        });
+      } catch {
+        // no-op
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center pt-20 pb-10 px-4 relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[128px] pointer-events-none" />
+    <div className="min-h-screen flex flex-col items-center justify-center gap-10 pt-20 pb-16 px-4 relative overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-primary/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(600px_circle_at_20%_20%,rgba(99,102,241,0.08),transparent_60%)] pointer-events-none" />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="glass max-w-lg w-full p-8 md:p-12 rounded-[2.5rem] relative z-10 text-center border border-white/10 shadow-2xl shadow-black/50"
+        className="glass max-w-xl w-full p-8 md:p-12 rounded-[2rem] relative z-10 text-center border border-white/10 shadow-2xl shadow-black/50"
       >
-        <div className="w-20 h-20 bg-gradient-to-br from-primary to-purple-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-primary/30">
-          <UserPlus size={32} className="text-white" />
+        <div className="relative mx-auto mb-8">
+          <div className="absolute inset-0 blur-2xl bg-gradient-to-br from-primary/40 to-purple-500/30 rounded-full -z-10" />
+          <div className="w-20 h-20 bg-gradient-to-br from-primary to-purple-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-primary/30">
+            <UserPlus size={32} className="text-white" />
+          </div>
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          {loading ? (
-            <span className="animate-pulse bg-white/10 rounded px-4 py-2 block w-48 mx-auto">
-              &nbsp;
-            </span>
-          ) : (
-            <>
-              Join <span className="text-primary">{inviterName}</span> on
-              Interesta
-            </>
-          )}
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+          Join <span className="text-primary">{inviterName}</span> on Interesta
         </h1>
-
-        <p className="text-gray-400 mb-8 leading-relaxed">
-          You&apos;ve been invited to join the most authentic social discovery
-          app. Connect, chat, and meet real people nearby.
+        <p className="text-gray-300/90 mb-6 leading-relaxed">
+          Make real connections with people nearby who share your interests.
         </p>
-
-        {code && (
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-8 flex items-center gap-3 justify-center">
-            <Gift className="text-yellow-400" size={20} />
-            <span className="text-sm font-medium text-gray-300">
-              Referral Code applied:{" "}
-              <span className="text-white font-bold tracking-wider">
-                {code}
-              </span>
-            </span>
+        {error && (
+          <div className="mb-6 text-sm text-amber-300/90 bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-xl">
+            {error}
           </div>
         )}
+
+        {inviter && (
+          <div className="rounded-2xl p-4 md:p-5 mb-8 bg-white/5 border border-white/10 flex items-center gap-4 text-left">
+            <Image
+              src={
+                inviter.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(inviter.name)}&background=6366F1&color=fff`
+              }
+              alt={inviter.name}
+              width={64}
+              height={64}
+              sizes="64px"
+              className="w-14 h-14 md:w-16 md:h-16 rounded-xl object-cover border border-white/10"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold">{inviter.name}</span>
+                {inviter.isVerified && (
+                  <ShieldCheck size={16} className="text-emerald-300" />
+                )}
+              </div>
+              <div className="text-sm text-gray-400 truncate">
+                {inviter.headline || "Active member"}
+              </div>
+              <div className="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                {inviter.city && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin size={12} /> {inviter.city}
+                  </span>
+                )}
+                {typeof inviter.referralCount === "number" && (
+                  <span>• {inviter.referralCount} friends invited</span>
+                )}
+                {typeof inviter.unlockedGroupPasses === "number" && (
+                  <span>• {inviter.unlockedGroupPasses} group passes</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {code ? (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 md:p-5 mb-8 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-yellow-400/15 border border-yellow-400/20 flex items-center justify-center">
+                <Gift className="text-yellow-300" size={18} />
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Referral Code
+                </div>
+                <div className="font-mono text-xl md:text-2xl font-bold tracking-[0.3em] text-white select-text">
+                  {code}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={handleCopy}
+              className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 transition-colors"
+              aria-label="Copy referral code"
+            >
+              {copied ? (
+                <Check size={18} className="text-emerald-300" />
+              ) : (
+                <Copy size={18} className="text-gray-200" />
+              )}
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 md:p-5 mb-8">
+            <div className="text-sm text-gray-300 mb-3">
+              Enter a referral code to apply benefits
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="ENTER CODE"
+                className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <button
+                onClick={() => setCode(code.trim().toUpperCase())}
+                className="px-4 py-3 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold transition-all"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8 text-left">
+          {[
+            {
+              icon: Sparkles,
+              title: "Verified people",
+              color: "text-emerald-300",
+            },
+            { icon: UserPlus, title: "Smart matching", color: "text-blue-300" },
+            { icon: Gift, title: "Free group pass", color: "text-amber-300" },
+          ].map((f, i) => (
+            <div
+              key={i}
+              className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 flex items-center gap-3"
+            >
+              <f.icon className={f.color} size={18} />
+              <span className="text-sm text-gray-200">{f.title}</span>
+            </div>
+          ))}
+        </div>
 
         <div className="space-y-4">
           <button
             onClick={handleOpenApp}
             disabled={tryingOpen}
-            className="w-full py-4 bg-primary hover:bg-primary-dark disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
+            className="w-full py-4 bg-gradient-to-r from-primary to-purple-600 hover:from-primary hover:to-purple-500 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
           >
             {tryingOpen ? "Opening..." : "Accept Invite & Join"}{" "}
             <ArrowRight size={20} />
           </button>
-          <a
-            href="/"
-            className="block text-sm text-gray-400 hover:text-white transition"
-          >
-            Continue on the website
-          </a>
-          <p className="text-xs text-gray-500 mt-4">
+          <div className="flex items-center justify-center gap-3">
+            <a
+              href="/"
+              className="text-sm text-gray-400 hover:text-white transition"
+            >
+              Continue on the website
+            </a>
+            <span className="text-gray-600">•</span>
+            <button
+              onClick={handleShare}
+              className="text-sm text-gray-400 hover:text-white transition inline-flex items-center gap-1"
+            >
+              <Share2 size={14} /> Share
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
             By joining, you agree to our Terms of Service and Privacy Policy.
           </p>
         </div>
       </motion.div>
+      <div className="w-full px-2 sm:px-6 max-w-5xl relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+            <h3 className="text-white font-semibold mb-2">How it works</h3>
+            <ul className="text-sm text-gray-300 space-y-1.5">
+              <li>• Accept invite and create your profile</li>
+              <li>• Choose interests and set discovery radius</li>
+              <li>• Start connecting with nearby people</li>
+            </ul>
+          </div>
+          <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+            <h3 className="text-white font-semibold mb-2">Benefits</h3>
+            <ul className="text-sm text-gray-300 space-y-1.5">
+              <li>• Better matches via shared interests</li>
+              <li>• Premium trial with referral</li>
+              <li>• Earn group passes by inviting friends</li>
+            </ul>
+          </div>
+          <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+            <h3 className="text-white font-semibold mb-2">Safety</h3>
+            <ul className="text-sm text-gray-300 space-y-1.5">
+              <li>• Profile verification</li>
+              <li>• Privacy-first location controls</li>
+              <li>• Easy reporting and blocking</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

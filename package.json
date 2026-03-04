@@ -5,6 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix backend\" \"npm run start --prefix mobile\" \"npm run dev --prefix web\"",
+    "dev:web": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix web\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:mobile": "npm run start --prefix mobile",
     "backend": "npm run dev --prefix backend",
     "mobile": "npm run start --prefix mobile",
     "web": "npm run dev --prefix web",

@@ -179,7 +179,9 @@ exports.validateReferral = catchAsync(async (req, res, next) => {
     const { code } = req.params;
     if (!code) return next(new AppError('Please provide a referral code', 400));
 
-    const referrer = await User.findOne({ referralCode: code.toUpperCase() });
+    const referrer = await User.findOne({ referralCode: code.toUpperCase() }).select(
+        'name username avatar city jobTitle company referralCode referralCount unlockedGroupPasses isVerified'
+    );
     if (!referrer) {
         return next(new AppError('Invalid referral code', 404));
     }
@@ -189,7 +191,15 @@ exports.validateReferral = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Referral code is valid',
         data: {
-            referrerName: referrer.name
+            referrerName: referrer.name,
+            referrerUsername: referrer.username,
+            referrerAvatar: referrer.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(referrer.name)}&background=6366F1&color=fff`,
+            referrerCity: referrer.city || null,
+            referrerHeadline: [referrer.jobTitle, referrer.company].filter(Boolean).join(' at ') || null,
+            referralCode: referrer.referralCode,
+            referralCount: referrer.referralCount || 0,
+            unlockedGroupPasses: referrer.unlockedGroupPasses || 0,
+            isVerified: !!referrer.isVerified
         }
     });
 });
