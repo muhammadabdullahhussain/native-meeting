@@ -1,11 +1,8 @@
 const path = require("path");
 const express = require("express");
-const expressLayouts = require("express-ejs-layouts");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-// const hpp = require('hpp');
-// const mongoSanitize = require('express-mongo-sanitize');
 
 const authRoutes = require("./api/routes/auth");
 const uploadRoutes = require("./api/routes/upload");
@@ -15,24 +12,15 @@ const connectionRoutes = require("./api/routes/connections");
 const messageRoutes = require("./api/routes/messages");
 const notificationRoutes = require("./api/routes/notifications");
 const interestRoutes = require("./api/routes/interests");
-const referralController = require("./api/controllers/referralController");
-const webController = require("./api/controllers/webController");
 const errorMiddleware = require("./api/middleware/errorMiddleware");
 
 const app = express();
-
-// ─── VIEW ENGINE & STATIC FILES ──────────────────────────────────────────────
-app.use(expressLayouts);
-app.set("layout", "layout"); // default layout
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "../views"));
-app.use(express.static(path.join(__dirname, "../public")));
 
 // ─── MIDDLEWARE ─────────────────────────────────────────────────────────────
 
 app.use(
   cors({
-    origin: "*", // For development, allow all origins to prevent mobile connection issues
+    origin: "*",
     credentials: true,
   }),
 );
@@ -41,16 +29,7 @@ app.use(
 
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
-        styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
-        fontSrc: ["'self'", "fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "https:", "*"],
-        connectSrc: ["'self'", "*"],
-      },
-    },
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   }),
 );
@@ -68,14 +47,9 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 app.use(express.json({ limit: "10kb" }));
-// app.use(mongoSanitize()); // Deprecated in Express 5 (re-assignment conflict)
-// app.use(hpp()); // Deprecated in Express 5 (re-assignment conflict)
 
 app.get("/healthz", (req, res) => {
-  res.status(200).send("OK");
-});
-app.head("/healthz", (req, res) => {
-  res.status(200).end();
+  res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
@@ -89,15 +63,23 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/interests", interestRoutes);
 
-// ─── WEB ROUTES ──────────────────────────────────────────────────────────────
+// ─── ROOT REDIRECT ───────────────────────────────────────────────────────────
 
-app.get("/", webController.home);
-app.get("/about", webController.about);
-app.get("/safety", webController.safety);
-app.get("/help", webController.help);
-app.get("/legal", webController.legal);
-app.get("/pricing", webController.pricing);
-app.get("/join", referralController.renderJoinPage);
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Interesta API is running",
+    version: "1.0.0",
+    frontend: "https://interesta.vercel.app"
+  });
+});
+
+// Redirect legacy join links to Next.js app
+app.get("/join", (req, res) => {
+  const { code } = req.query;
+  const redirectUrl = `https://interesta.vercel.app/join${code ? `?code=${code}` : ""}`;
+  res.redirect(redirectUrl);
+});
 
 // 404 Handler for API
 app.use("/api", (req, res) => {
@@ -107,9 +89,12 @@ app.use("/api", (req, res) => {
   });
 });
 
-// 404 Handler for Web
+// Generic 404 Handler
 app.use((req, res) => {
-  res.status(404).render("404", { title: "Page Not Found" });
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
 });
 
 // ─── GLOBAL ERROR HANDLER ────────────────────────────────────────────────────
