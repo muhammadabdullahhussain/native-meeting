@@ -14,19 +14,25 @@ if (debuggerHost) {
     DYNAMIC_IP = debuggerHost.split(':')[0];
 }
 
+const PROD_URL = 'https://native-meeting.onrender.com'; // Placeholder, user needs to update this
+
 export const LOCAL_IP = DYNAMIC_IP;
 
-export const API_BASE_URL = Platform.select({
-    ios: `http://${LOCAL_IP}:5001/api`,
-    android: `http://${LOCAL_IP}:5001/api`,
-    web: 'http://localhost:5001/api',
-});
+export const API_BASE_URL = __DEV__
+    ? Platform.select({
+        ios: `http://${LOCAL_IP}:5001/api`,
+        android: `http://${LOCAL_IP}:5001/api`,
+        web: 'http://localhost:5001/api',
+    })
+    : `${PROD_URL}/api`;
 
-export const SOCKET_URL = Platform.select({
-    ios: `http://${LOCAL_IP}:5001`,
-    android: `http://${LOCAL_IP}:5001`,
-    web: 'http://localhost:5001',
-});
+export const SOCKET_URL = __DEV__
+    ? Platform.select({
+        ios: `http://${LOCAL_IP}:5001`,
+        android: `http://${LOCAL_IP}:5001`,
+        web: 'http://localhost:5001',
+    })
+    : PROD_URL;
 
 export const CONFIG = {
     API_BASE_URL,
