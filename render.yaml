@@ -1,5 +1,15 @@
 services:
   - type: web
+    name: interesta-web
+    env: node
+    plan: free
+    buildCommand: cd web && npm install && npm run build
+    startCommand: cd web && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+  - type: web
     name: interesta-backend
     env: node
     plan: free

@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run start --prefix mobile\"",
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run start --prefix mobile\" \"npm run dev --prefix web\"",
     "backend": "npm run dev --prefix backend",
     "mobile": "npm run start --prefix mobile",
+    "web": "npm run dev --prefix web",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
