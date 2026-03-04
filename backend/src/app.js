@@ -71,6 +71,13 @@ app.use(express.json({ limit: "10kb" }));
 // app.use(mongoSanitize()); // Deprecated in Express 5 (re-assignment conflict)
 // app.use(hpp()); // Deprecated in Express 5 (re-assignment conflict)
 
+app.get("/healthz", (req, res) => {
+  res.status(200).send("OK");
+});
+app.head("/healthz", (req, res) => {
+  res.status(200).end();
+});
+
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
 
 app.use("/api/auth", authRoutes);

@@ -1,20 +1,27 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
-    const MONGO_URI = process.env.MONGO_URI;
-
-    if (!MONGO_URI) {
+    const uri = process.env.MONGO_URI;
+    if (!uri) {
         console.error('❌ MONGO_URI is missing from .env file');
-        process.exit(1);
+        return;
     }
-
-    try {
-        const conn = await mongoose.connect(MONGO_URI);
-        console.log(`✅ Connected to MongoDB: ${conn.connection.host}`);
-    } catch (err) {
-        console.error('❌ MongoDB Connection Error:', err.message);
-        process.exit(1);
+    const maxRetries = 5;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+        try {
+            const conn = await mongoose.connect(uri);
+            console.log(`✅ Connected to MongoDB: ${conn.connection.host}`);
+            return conn;
+        } catch (err) {
+            attempt += 1;
+            console.error('❌ MongoDB Connection Error:', err.message);
+            if (attempt < maxRetries) {
+                await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+            }
+        }
     }
+    console.error('❌ Failed to connect to MongoDB after retries');
 };
 
 module.exports = connectDB;
