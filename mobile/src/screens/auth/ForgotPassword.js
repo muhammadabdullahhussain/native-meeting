@@ -23,7 +23,12 @@ export default function ForgotPassword({ navigation }) {
             return;
         }
         setSent(true);
-        Animated.spring(checkScale, { toValue: 1, tension: 60, friction: 5, useNativeDriver: true }).start();
+        Animated.spring(checkScale, {
+            toValue: 1,
+            tension: 60,
+            friction: 5,
+            useNativeDriver: Platform.OS !== 'web'
+        }).start();
     };
 
     return (
@@ -172,7 +177,21 @@ const s = StyleSheet.create({
     errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#FECACA' },
     errorText: { fontSize: 13, color: '#DC2626', fontFamily: theme.typography.fontFamily.medium, flex: 1 },
 
-    ctaBtn: { borderRadius: 16, overflow: 'hidden', marginBottom: 16, shadowColor: '#6366F1', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
+    ctaBtn: {
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: 16,
+        ...Platform.select({
+            web: { boxShadow: '0 6px 12px rgba(99,102,241,0.3)' },
+            default: {
+                shadowColor: '#6366F1',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+            }
+        }),
+        elevation: 6
+    },
     ctaGrad: { height: 56, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
     ctaText: { fontSize: 17, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
 

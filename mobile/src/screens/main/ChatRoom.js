@@ -3,76 +3,248 @@ import {
     View, Text, StyleSheet, TextInput, TouchableOpacity,
     FlatList, KeyboardAvoidingView, Platform, Image, Modal, Alert
 } from 'react-native';
+import { Keyboard } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../theme/theme';
 import { useToast } from '../../context/ToastContext';
+import { ModernPlaceholder } from '../../components/common/ModernPlaceholder';
+import TypingIndicator from '../../components/common/TypingIndicator';
+import { useSocket } from '../../context/SocketContext';
+import { authService } from '../../api/authService';
+import { useAuth } from '../../context/AuthContext';
 
 const REACTIONS = ['❤️', '😂', '👍', '🔥', '😮', '😢'];
 
-const AUTO_REPLIES = [
-    "Haha, that's amazing! Catch up later?",
-    "Sounds great! Let's do it 🚀",
-    "I totally agree with you!",
-    "That's really interesting, tell me more.",
-    "Sure, I'm down! When works for you?",
-    "Oh wow, I didn't know that!",
-];
+const getSafeId = (item, suffix = '') => {
+    if (!item) return `null-${Date.now()}${suffix}`;
+    if (typeof item === 'string') return item + suffix;
+    const raw = item._id || item.id || item.user?._id || item.user?.id || item.user || item;
+    if (typeof raw === 'string') return raw + suffix;
+    if (raw && typeof raw === 'object') {
+        const str = raw.toString();
+        if (str && str !== '[object Object]') return str + suffix;
+        const deep = raw._id || raw.id;
+        if (deep) return deep.toString() + suffix;
+    }
+    return `fb-${Date.now()}${suffix}`;
+};
 
 export default function ChatRoom({ route, navigation }) {
     const { user, chatData } = route.params || {};
     const insets = useSafeAreaInsets();
     const { confirmAction, showToast } = useToast();
 
-    const initialMessages = (chatData?.messages && chatData.messages.length > 0)
-        ? chatData.messages
-        : [{ id: 'm1', text: 'Hey there! How are you doing?', sender: 'them', time: '10:00 AM', read: true }];
+    const { user: me } = useAuth();
+    const { on, emit, emitWithAck, socket } = useSocket();
 
-    const [messages, setMessages] = useState(initialMessages);
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [userStatus, setUserStatus] = useState(user?.isOnline ? 'online' : 'offline');
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const [replyingTo, setReplyingTo] = useState(null);
-    const [reactionsFor, setReactionsFor] = useState(null); // message id
-    const [reactions, setReactions] = useState({}); // { msgId: emoji }
-    const [showAttach, setShowAttach] = useState(false);
     const [reportVisible, setReportVisible] = useState(false);
+    const [replyingTo, setReplyingTo] = useState(null);
+    const [reactions, setReactions] = useState({});
+    const [reactionsFor, setReactionsFor] = useState(null);
+    const [showAttach, setShowAttach] = useState(false);
+
     const flatListRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
 
+    // Fetch message history
     useEffect(() => {
-        if (messages.length > 0 && messages[messages.length - 1].sender === 'me') {
-            setIsTyping(true);
-            const timer = setTimeout(() => {
-                setIsTyping(false);
-                const reply = AUTO_REPLIES[Math.floor(Math.random() * AUTO_REPLIES.length)];
-                setMessages(prev => [...prev, {
-                    id: Date.now().toString(),
-                    text: reply,
-                    sender: 'them',
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    read: false,
-                }]);
-            }, 2000 + Math.random() * 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [messages]);
+        const fetchHistory = async () => {
+            try {
+                if (user?._id || user?.id) {
+                    const targetId = user?._id || user?.id;
+                    const data = await authService.getChatMessages(targetId);
 
-    const sendMessage = () => {
+                    const formatted = data.map(m => ({
+                        id: m._id,
+                        text: m.text,
+                        sender: m.sender === (me?.id || me?._id) ? 'me' : 'them',
+                        time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        read: m.isRead,
+                        readAt: m.readAt
+                    }));
+                    setMessages(formatted);
+
+                    // Mark unread messages as read
+                    const unreadIds = data
+                        .filter(m => m.sender !== me?._id && !m.isRead)
+                        .map(m => m._id);
+
+                    if (unreadIds.length > 0) {
+                        emitWithAck('message_read', {
+                            messageIds: unreadIds,
+                            senderId: targetId,
+                            readerId: me?._id
+                        }).catch(() => {});
+                    }
+                }
+            } catch (err) {
+                console.error('[ChatRoom] History fetch failed:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHistory();
+    }, [user, me, emit]);
+
+    const handleReport = async (reason) => {
+        try {
+            await authService.reportUser(user._id, reason);
+            setReportVisible(false);
+            showToast('Reported ✅', 'Thank you. The user has been reported and blocked.', 'success');
+            navigation.goBack();
+        } catch (err) {
+            showToast('Error', err.message || 'Failed to report user', 'error');
+        }
+    };
+
+    // Listen for real-time messages & presence
+    useEffect(() => {
+        const offMsg = on('new_message', (msg) => {
+            const isFromThisUser = (msg.sender === user?._id || msg.sender === user?.id);
+            if (isFromThisUser) {
+                const newMsg = {
+                    id: msg._id,
+                    text: msg.text,
+                    sender: 'them',
+                    time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    read: false,
+                };
+                setMessages(prev => [...prev, newMsg]);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+                // Auto-read if screen is focused
+                emit('message_read', {
+                    messageIds: [msg._id],
+                    senderId: msg.sender,
+                    readerId: me?._id
+                });
+            }
+        });
+
+        const offRead = on('messages_marked_read', (data) => {
+            if (data.readerId === user?._id || data.readerId === user?.id) {
+                setMessages(prev => prev.map(m =>
+                    data.messageIds.includes(m.id) ? { ...m, read: true } : m
+                ));
+            }
+        });
+
+        const offTyping = on('typing', (data) => {
+            // ONLY handle if it's a direct chat (no groupId) AND the sender matches current peer
+            if (!data.groupId && (data.senderId === user?._id || data.senderId === user?.id)) {
+                setIsTyping(data.isTyping);
+            }
+        });
+
+        // Check initial presence
+        const targetId = user?._id || user?.id;
+        if (socket && targetId) {
+            emit('get_user_status', targetId, (status) => {
+                setUserStatus(status);
+            });
+        }
+
+        const offPresence = on('user_presence', (data) => {
+            if (data.userId === user?._id || data.userId === user?.id) {
+                setUserStatus(data.status);
+            }
+        });
+
+        return () => {
+            Keyboard?.dismiss();
+            offMsg(); offRead(); offTyping(); offPresence();
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            emitWithAck('typing', { receiverId: user?._id || user?.id, senderId: me?._id, senderName: me?.name, senderAvatar: me?.avatar, isTyping: false, groupId: null }).catch(() => {});
+        };
+    }, [on, emit, user, me, socket]);
+
+    const sendMessage = async () => {
         if (inputText.trim() === '') return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        const newMsg = {
-            id: Date.now().toString(),
-            text: inputText.trim(),
+
+        const text = inputText.trim();
+        const targetId = user?._id || user?.id;
+
+        // Optimistic UI update
+        const tempId = Date.now().toString();
+        const optimisticMsg = {
+            id: tempId,
+            text: text,
             sender: 'me',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            replyTo: replyingTo,
             read: false,
+            sending: true
         };
-        setMessages(prev => [...prev, newMsg]);
+
+        setMessages(prev => [...prev, optimisticMsg]);
         setInputText('');
         setReplyingTo(null);
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+
+        // Stop typing immediately
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        emitWithAck('typing', {
+            receiverId: targetId,
+            senderId: me?._id,
+            senderName: me?.name || 'User',
+            senderAvatar: me?.avatar,
+            isTyping: false,
+            groupId: null
+        }).catch(() => {});
+
+        try {
+            const resp = await authService.sendMessage({
+                receiverId: targetId,
+                text: text
+            });
+            // Update the optimistic message with real ID
+            setMessages(prev => prev.map(m => m.id === tempId ? {
+                ...m,
+                id: resp.data._id,
+                sending: false
+            } : m));
+        } catch (err) {
+            showToast('Error', 'Message failed to send', 'error');
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+            setInputText(text); // Restore text
+        }
+    };
+
+    const handleType = (text) => {
+        setInputText(text);
+        const isCurrentlyTyping = text.length > 0;
+
+        // Notify typing (explicitly for direct chat: no groupId)
+        emitWithAck('typing', {
+            receiverId: user?._id || user?.id,
+            senderId: me?._id,
+            senderName: me?.name || 'User',
+            senderAvatar: me?.avatar,
+            isTyping: isCurrentlyTyping,
+            groupId: null
+        }).catch(() => {});
+
+        // Auto-clear typing indicator after pause
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        if (isCurrentlyTyping) {
+            typingTimeoutRef.current = setTimeout(() => {
+                emitWithAck('typing', {
+                    receiverId: user?._id || user?.id,
+                    senderId: me?._id,
+                    senderName: me?.name || 'User',
+                    senderAvatar: me?.avatar,
+                    isTyping: false,
+                    groupId: null
+                }).catch(() => {});
+            }, 3000);
+        }
     };
 
     const addReaction = (msgId, emoji) => {
@@ -113,7 +285,21 @@ export default function ChatRoom({ route, navigation }) {
                         <View style={s.msgMeta}>
                             <Text style={[s.msgTime, isMe && s.msgTimeMe]}>{item.time}</Text>
                             {isMe && (
-                                <Text style={s.readTick}>{item.read ? '✓✓' : '✓'}</Text>
+                                <View style={s.tickWrap}>
+                                    {item.sending ? (
+                                        <Feather name="clock" size={11} color="rgba(255,255,255,0.5)" />
+                                    ) : item.read ? (
+                                        <View style={{ flexDirection: 'row' }}>
+                                            <Feather name="check" size={12} color="#4ADE80" style={{ marginRight: -5 }} />
+                                            <Feather name="check" size={12} color="#4ADE80" />
+                                        </View>
+                                    ) : (
+                                        <View style={{ flexDirection: 'row' }}>
+                                            <Feather name="check" size={12} color="rgba(255,255,255,0.5)" style={{ marginRight: -5 }} />
+                                            <Feather name="check" size={12} color="rgba(255,255,255,0.5)" />
+                                        </View>
+                                    )}
+                                </View>
                             )}
                         </View>
                     </View>
@@ -128,8 +314,8 @@ export default function ChatRoom({ route, navigation }) {
                 {/* Swipe-to-reply hint */}
                 {reactionsFor === item.id && (
                     <View style={s.reactionPicker}>
-                        {REACTIONS.map(emoji => (
-                            <TouchableOpacity key={emoji} onPress={() => addReaction(item.id, emoji)} style={s.reactionBtn}>
+                        {REACTIONS.map((emoji, i) => (
+                            <TouchableOpacity key={`${emoji}-${i}`} onPress={() => addReaction(item.id, emoji)} style={s.reactionBtn}>
                                 <Text style={{ fontSize: 22 }}>{emoji}</Text>
                             </TouchableOpacity>
                         ))}
@@ -154,18 +340,42 @@ export default function ChatRoom({ route, navigation }) {
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             >
                 <View style={s.headerLeft}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn} activeOpacity={0.8}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            Keyboard?.dismiss();
+                            navigation.goBack();
+                        }}
+                        style={s.backBtn}
+                        activeOpacity={0.8}
+                    >
                         <Feather name="arrow-left" size={20} color="#FFF" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={s.headerUser} onPress={() => navigation.navigate('UserProfile', { user })} activeOpacity={0.85}>
+                    <TouchableOpacity
+                        style={s.headerUser}
+                        onPress={() => {
+                            Keyboard?.dismiss();
+                            navigation.navigate('UserProfile', { user });
+                        }}
+                        activeOpacity={0.85}
+                    >
                         <View style={s.headerAvatarWrap}>
-                            <Image source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=9' }} style={s.headerAvatar} />
-                            {user?.isOnline && <View style={s.headerOnlineDot} />}
+                            {user?.avatar ? (
+                                <Image source={{ uri: user.avatar }} style={s.headerAvatar} />
+                            ) : (
+                                <ModernPlaceholder name={user?.name} size={44} style={{ borderRadius: 14 }} />
+                            )}
+                            {userStatus === 'online' && <View style={s.headerOnlineDot} />}
                         </View>
-                        <View>
-                            <Text style={s.headerName}>{user?.name || 'Chat'}</Text>
-                            <Text style={[s.headerStatus, user?.isOnline && s.headerStatusOnline]}>
-                                {user?.isOnline ? '● Active now' : 'Tap to view profile'}
+                        <View style={{ flex: 1, marginLeft: 12, marginRight: 8 }}>
+                            <Text style={s.headerName} numberOfLines={1} ellipsizeMode="tail">{user?.name || 'Chat'}</Text>
+                            <Text
+                                style={[
+                                    s.headerStatus,
+                                    (isTyping || userStatus === 'online') && s.headerStatusOnline
+                                ]}
+                                numberOfLines={1}
+                            >
+                                {isTyping ? 'typing...' : userStatus === 'online' ? '● Active now' : 'Tap to view profile'}
                             </Text>
                         </View>
                     </TouchableOpacity>
@@ -186,10 +396,15 @@ export default function ChatRoom({ route, navigation }) {
                                 text: 'Block User', style: 'destructive', onPress: () => {
                                     confirmAction({
                                         title: 'Block User? 🚫',
-                                        message: `Are you sure you want to block ${user.name}? They won't be able to message you.`,
-                                        onConfirm: () => {
-                                            showToast('User Blocked', `${user.name} has been restricted.`, 'success');
-                                            navigation.goBack();
+                                        message: `Are you sure you want to block ${user.name}? They won't be able to message you and you will no longer see each other.`,
+                                        onConfirm: async () => {
+                                            try {
+                                                await authService.blockUser(user._id);
+                                                showToast('User Blocked', `${user.name} has been restricted.`, 'success');
+                                                navigation.goBack();
+                                            } catch (err) {
+                                                showToast('Error', err.message || 'Failed to block user', 'error');
+                                            }
                                         },
                                         confirmText: 'Block',
                                         confirmStyle: 'destructive'
@@ -206,34 +421,26 @@ export default function ChatRoom({ route, navigation }) {
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
+
+                {/* ── MESSAGES ── */}
                 <FlatList
                     ref={flatListRef}
                     data={messages}
-                    keyExtractor={item => item.id}
+                    keyExtractor={(item, i) => getSafeId(item, `msg-${i}`)}
                     renderItem={renderMessage}
                     contentContainerStyle={s.msgList}
                     showsVerticalScrollIndicator={false}
+                    initialNumToRender={15}
+                    maxToRenderPerBatch={20}
+                    windowSize={10}
+                    removeClippedSubviews
+                    keyboardShouldPersistTaps="handled"
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                    onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-                    ListHeaderComponent={() => (
-                        <View style={s.dateDivider}>
-                            <View style={s.dateLine} /><Text style={s.dateText}>Today</Text><View style={s.dateLine} />
-                        </View>
-                    )}
                 />
 
-                {/* Typing indicator */}
-                {isTyping && (
-                    <View style={s.typingRow}>
-                        <Image source={{ uri: user?.avatar || 'https://i.pravatar.cc/150?img=9' }} style={s.typingAvatar} />
-                        <View style={s.typingBubble}>
-                            <Text style={s.typingDots}>• • •</Text>
-                        </View>
-                    </View>
-                )}
 
                 {/* Reply bar */}
                 {replyingTo && (
@@ -247,9 +454,22 @@ export default function ChatRoom({ route, navigation }) {
                         </TouchableOpacity>
                     </View>
                 )}
+                {/* Typing indicator bubble */}
+                {isTyping && (
+                    <View style={s.typingBubbleOuter}>
+                        {user?.avatar ? (
+                            <Image source={{ uri: user.avatar }} style={s.typingAvatar} />
+                        ) : (
+                            <ModernPlaceholder name={user?.name} size={28} style={{ borderRadius: 10, marginRight: 8 }} />
+                        )}
+                        <View style={s.typingBubble}>
+                            <TypingIndicator dotColor="#94A3B8" dotSize={5} spacing={3} />
+                        </View>
+                    </View>
+                )}
 
                 {/* Input */}
-                <View style={[s.inputRow, { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 12) : insets.bottom + 8 }]}>
+                <View style={[s.inputRow, { paddingBottom: Math.max(insets.bottom, 12) }]}>
                     <TouchableOpacity style={s.attachBtn} onPress={() => setShowAttach(true)} activeOpacity={0.8}>
                         <Feather name="plus" size={22} color="#6366F1" />
                     </TouchableOpacity>
@@ -257,30 +477,30 @@ export default function ChatRoom({ route, navigation }) {
                         <TextInput
                             style={s.input}
                             value={inputText}
-                            onChangeText={setInputText}
+                            onChangeText={handleType}
                             placeholder="Message..."
                             placeholderTextColor="#94A3B8"
                             multiline
                         />
                         {inputText.trim() === '' && (
-                            <TouchableOpacity style={s.cameraBtn}>
+                            <TouchableOpacity style={s.cameraBtn} onPress={() => showToast('Camera', 'Coming soon!', 'info')}>
                                 <Feather name="camera" size={18} color="#94A3B8" />
                             </TouchableOpacity>
                         )}
                     </View>
-                    {inputText.trim() !== '' ? (
-                        <TouchableOpacity style={s.sendBtn} onPress={sendMessage} activeOpacity={0.85}>
-                            <LinearGradient colors={['#6366F1', '#7C3AED']} style={s.sendBtnGrad}>
-                                <Feather name="send" size={16} color="#FFF" />
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity style={s.voiceBtn} activeOpacity={0.85}
-                            onPress={() => showToast('Voice Message', 'Coming soon!', 'info')}
-                        >
-                            <Feather name="mic" size={20} color="#6366F1" />
-                        </TouchableOpacity>
-                    )}
+                    <View style={s.actionBtnWrap}>
+                        {inputText.trim() !== '' ? (
+                            <TouchableOpacity onPress={sendMessage} activeOpacity={0.85} style={s.sendBtn}>
+                                <Feather name="send" size={20} color="#FFFFFF" style={{ marginLeft: 2 }} />
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity style={s.voiceBtn} activeOpacity={0.85}
+                                onPress={() => showToast('Voice Message', 'Coming soon!', 'info')}
+                            >
+                                <Feather name="mic" size={20} color="#6366F1" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
             </KeyboardAvoidingView>
 
@@ -291,10 +511,7 @@ export default function ChatRoom({ route, navigation }) {
                         <View style={s.sheetHandle} />
                         <Text style={[s.msgSheetName, { marginBottom: 16 }]}>Report {user?.name}</Text>
                         {['Fake profile', 'Inappropriate content', 'Spam', 'Harassment', 'Other'].map((reason, i) => (
-                            <TouchableOpacity key={i} style={s.reportRow} activeOpacity={0.75} onPress={() => {
-                                setReportVisible(false);
-                                showToast('Reported ✅', 'Thank you. Our team will review this user within 24 hours.', 'success');
-                            }}>
+                            <TouchableOpacity key={i} style={s.reportRow} activeOpacity={0.75} onPress={() => handleReport(reason)}>
                                 <Text style={s.reportRowText}>{reason}</Text>
                                 <Feather name="chevron-right" size={16} color="#CBD5E1" />
                             </TouchableOpacity>
@@ -339,91 +556,219 @@ export default function ChatRoom({ route, navigation }) {
 }
 
 const s = StyleSheet.create({
-    root: { flex: 1, backgroundColor: '#F7F9FC' },
+    root: { flex: 1, backgroundColor: '#F1F5F9' }, // Lighter gray background for message contrast
 
     // HEADER
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingBottom: 12 },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 10,
+        zIndex: 10
+    },
     headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    backBtn: { width: 36, height: 36, borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-    headerUser: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+    backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    headerUser: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
     headerAvatarWrap: { position: 'relative' },
-    headerAvatar: { width: 40, height: 40, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
-    headerOnlineDot: { position: 'absolute', bottom: 0, right: 0, width: 11, height: 11, borderRadius: 5.5, backgroundColor: '#22C55E', borderWidth: 1.5, borderColor: '#0F172A' },
-    headerName: { fontSize: 15, fontFamily: theme.typography.fontFamily.bold, color: '#FFF', marginBottom: 1 },
-    headerStatus: { fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: theme.typography.fontFamily.medium },
-    headerStatusOnline: { color: '#86EFAC' },
-    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    headerIconBtn: { width: 36, height: 36, borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.12)', justifyContent: 'center', alignItems: 'center' },
+    headerAvatar: { width: 44, height: 44, borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)' },
+    headerOnlineDot: { position: 'absolute', bottom: -1, right: -1, width: 12, height: 12, borderRadius: 6, backgroundColor: '#22C55E', borderWidth: 2.5, borderColor: '#1D3461' },
+    headerName: { fontSize: 17, fontFamily: theme.typography.fontFamily.bold, color: '#FFF', letterSpacing: -0.3 },
+    headerStatus: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontFamily: theme.typography.fontFamily.medium },
+    headerStatusOnline: { color: '#4ADE80', fontFamily: theme.typography.fontFamily.bold },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    headerIconBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)', justifyContent: 'center', alignItems: 'center' },
 
     // MESSAGES
-    msgList: { padding: 16, paddingBottom: 24 },
-    dateDivider: { flexDirection: 'row', alignItems: 'center', marginVertical: 12, gap: 8 },
+    msgList: { padding: 16, paddingBottom: 32 },
+    dateDivider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24, paddingHorizontal: 20 },
     dateLine: { flex: 1, height: 1, backgroundColor: '#E2E8F0' },
-    dateText: { fontSize: 12, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
+    dateText: { fontSize: 12, color: '#94A3B8', fontFamily: theme.typography.fontFamily.bold, marginHorizontal: 12, textTransform: 'uppercase', letterSpacing: 1 },
 
-    msgWrap: { flexDirection: 'row', marginBottom: 8, position: 'relative' },
+    msgWrap: { flexDirection: 'row', marginBottom: 12, position: 'relative' },
     msgWrapMe: { justifyContent: 'flex-end' },
     msgWrapThem: { justifyContent: 'flex-start' },
 
-    bubble: { maxWidth: '75%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20 },
-    bubbleMe: { backgroundColor: '#6366F1', borderBottomRightRadius: 5 },
-    bubbleThem: { backgroundColor: '#FFF', borderBottomLeftRadius: 5, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
-    bubbleMeConsec: { borderTopRightRadius: 5 },
-    bubbleThemConsec: { borderTopLeftRadius: 5 },
+    bubble: {
+        maxWidth: '82%',
+        paddingHorizontal: 16,
+        paddingVertical: 11,
+        borderRadius: 22,
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2
+    },
+    bubbleMe: {
+        backgroundColor: '#6366F1',
+        borderBottomRightRadius: 4,
+    },
+    bubbleThem: {
+        backgroundColor: '#FFF',
+        borderBottomLeftRadius: 4,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    bubbleMeConsec: { borderTopRightRadius: 4, borderBottomRightRadius: 22 },
+    bubbleThemConsec: { borderTopLeftRadius: 4, borderBottomLeftRadius: 22 },
 
-    replyPreview: { maxWidth: '75%', marginBottom: 4, flexDirection: 'row', alignSelf: 'flex-start' },
-    replyPreviewMe: { alignSelf: 'flex-end' },
-    replyBar: { width: 3, borderRadius: 2, backgroundColor: '#6366F1', marginRight: 6 },
+    typingBubbleOuter: {
+        paddingHorizontal: 16,
+        marginBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: 8
+    },
+    typingAvatar: { width: 28, height: 28, borderRadius: 10, backgroundColor: '#E2E8F0', marginRight: 0 },
+    typingBubble: {
+        backgroundColor: '#FFF',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 18,
+        borderBottomLeftRadius: 4,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+            android: { elevation: 1 },
+            web: { boxShadow: '0px 1px 2px rgba(0,0,0,0.05)' }
+        })
+    },
+
+    replyPreview: { maxWidth: '75%', marginBottom: 6, flexDirection: 'row', alignSelf: 'flex-start', backgroundColor: 'rgba(0,0,0,0.03)', padding: 6, borderRadius: 8 },
+    replyPreviewMe: { alignSelf: 'flex-end', backgroundColor: 'rgba(255,255,255,0.1)' },
+    replyBar: { width: 3, borderRadius: 2, backgroundColor: '#6366F1', marginRight: 8 },
     replyText: { fontSize: 12, color: '#64748B', fontFamily: theme.typography.fontFamily.medium, flex: 1 },
 
-    msgText: { fontSize: 15, color: '#0F172A', lineHeight: 22, fontFamily: theme.typography.fontFamily.medium },
+    msgText: { fontSize: 15.5, color: '#1E293B', lineHeight: 22, fontFamily: theme.typography.fontFamily.medium },
     msgTextMe: { color: '#FFF' },
-    msgMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 3, gap: 4 },
-    msgTime: { fontSize: 10, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
-    msgTimeMe: { color: 'rgba(255,255,255,0.65)' },
-    readTick: { fontSize: 10, color: 'rgba(255,255,255,0.65)', fontFamily: theme.typography.fontFamily.bold },
+    msgMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4, gap: 4 },
+    msgTime: { fontSize: 10.5, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
+    msgTimeMe: { color: 'rgba(255,255,255,0.7)' },
+    tickWrap: { justifyContent: 'center', alignItems: 'center', marginLeft: 1 },
 
-    reactionBadge: { position: 'absolute', bottom: -6, left: 8, backgroundColor: '#FFF', borderRadius: 10, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+    reactionBadge: {
+        position: 'absolute',
+        bottom: -10,
+        left: 12,
+        backgroundColor: '#FFF',
+        borderRadius: 12,
+        paddingHorizontal: 7,
+        paddingVertical: 3,
+        borderWidth: 1.5,
+        borderColor: '#F1F5F9',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOpacity: 0.12,
+        shadowRadius: 6
+    },
 
-    reactionPicker: { flexDirection: 'row', alignSelf: 'center', backgroundColor: '#FFF', borderRadius: 30, paddingHorizontal: 8, paddingVertical: 6, marginVertical: 4, gap: 4, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 8, borderWidth: 1, borderColor: '#F1F5F9' },
+    reactionPicker: {
+        flexDirection: 'row',
+        alignSelf: 'center',
+        backgroundColor: '#FFF',
+        borderRadius: 30,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        marginVertical: 8,
+        gap: 8,
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 20,
+        elevation: 12,
+        borderWidth: 1,
+        borderColor: '#F1F5F9'
+    },
     reactionBtn: { padding: 6, borderRadius: 20 },
 
-    // TYPING
+    // TYPING - WhatsApp style
     typingRow: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
-    typingAvatar: { width: 26, height: 26, borderRadius: 9 },
-    typingBubble: { backgroundColor: '#FFF', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18, borderBottomLeftRadius: 5, borderWidth: 1, borderColor: '#F1F5F9' },
-    typingDots: { fontSize: 18, color: '#94A3B8', letterSpacing: 2 },
+    typingAvatar: { width: 26, height: 26, borderRadius: 13 },
+    typingBubble: {
+        backgroundColor: '#FFF',
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        borderRadius: 18,
+        borderBottomLeftRadius: 4,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1
+    },
+    typingDotsRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    typingDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#94A3B8' },
 
     // REPLY BAR
-    replyBar2: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, borderColor: '#C7D2FE' },
+    replyBar2: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F5F3FF',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderTopWidth: 1,
+        borderColor: '#DDD6FE',
+        marginHorizontal: 12,
+        borderRadius: 16,
+        marginBottom: -10,
+        zIndex: 5
+    },
     replyBar2Inner: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-    replyBar2Text: { flex: 1, fontSize: 13, color: '#6366F1', fontFamily: theme.typography.fontFamily.medium },
+    replyBar2Text: { flex: 1, fontSize: 13, color: '#6D28D9', fontFamily: theme.typography.fontFamily.semibold },
 
     // INPUT
-    inputRow: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12, paddingTop: 10, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 8 },
-    attachBtn: { width: 40, height: 40, borderRadius: 13, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center' },
-    inputWrap: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', backgroundColor: '#F8FAFC', borderRadius: 22, paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 10 : 6, borderWidth: 1, borderColor: '#E2E8F0', maxHeight: 120 },
-    input: { flex: 1, fontSize: 15, color: '#0F172A', fontFamily: theme.typography.fontFamily.medium, maxHeight: 100, paddingTop: 0, paddingBottom: 0 },
-    cameraBtn: { marginLeft: 8, paddingBottom: 2 },
-    sendBtn: { width: 42, height: 42, borderRadius: 14, overflow: 'hidden' },
-    sendBtnGrad: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    voiceBtn: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center' },
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        paddingHorizontal: 8,
+        paddingTop: 8,
+        backgroundColor: 'transparent',
+        gap: 6,
+        position: 'relative'
+    },
+    attachBtn: { width: 46, height: 46, borderRadius: 16, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, borderWidth: 1, borderColor: '#F1F5F9' },
+    inputWrap: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        backgroundColor: '#FFF',
+        borderRadius: 24,
+        paddingHorizontal: 18,
+        paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        maxHeight: 120,
+        shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
+    },
+    input: { flex: 1, fontSize: 16, color: '#1E293B', fontFamily: theme.typography.fontFamily.medium, maxHeight: 100, paddingTop: 0, paddingBottom: 0 },
+    cameraBtn: { marginLeft: 12, paddingBottom: 2 },
+    sendBtn: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#6366F1', justifyContent: 'center', alignItems: 'center' },
+    sendBtnGrad: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
+    voiceBtn: { width: 46, height: 46, borderRadius: 16, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, borderWidth: 1, borderColor: '#F1F5F9' },
 
     // ATTACH MODAL
-    overlayDark: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-    attachSheet: { backgroundColor: '#FFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingBottom: 40 },
-    sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', alignSelf: 'center', marginTop: 12, marginBottom: 8 },
-    attachTitle: { fontSize: 17, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 16, textAlign: 'center' },
-    attachGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'center' },
-    attachItem: { width: 88, alignItems: 'center' },
-    attachIconBox: { width: 60, height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-    attachLabel: { fontSize: 13, fontFamily: theme.typography.fontFamily.medium, color: '#334155', textAlign: 'center' },
+    overlayDark: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.5)', justifyContent: 'flex-end' },
+    attachSheet: { backgroundColor: '#FFF', borderTopLeftRadius: 36, borderTopRightRadius: 36, paddingHorizontal: 24, paddingBottom: 48 },
+    sheetHandle: { width: 44, height: 5, borderRadius: 2.5, backgroundColor: '#E2E8F0', alignSelf: 'center', marginTop: 14, marginBottom: 12 },
+    attachTitle: { fontSize: 20, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 24, textAlign: 'center', letterSpacing: -0.5 },
+    attachGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 20, justifyContent: 'center' },
+    attachItem: { width: 95, alignItems: 'center' },
+    attachIconBox: { width: 68, height: 68, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+    attachLabel: { fontSize: 14, fontFamily: theme.typography.fontFamily.semibold, color: '#475569', textAlign: 'center' },
 
     // ADDITIONAL SHEET / REPORT STYLES
-    msgSheet: { backgroundColor: '#FFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingBottom: 36 },
-    msgSheetName: { fontSize: 17, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 2, marginTop: 4 },
-    reportRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-    reportRowText: { fontSize: 15, fontFamily: theme.typography.fontFamily.medium, color: '#334155' },
-    cancelBtn: { backgroundColor: '#F8FAFC', borderRadius: 14, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
-    cancelBtnText: { fontSize: 14, fontFamily: theme.typography.fontFamily.bold, color: '#64748B' },
+    msgSheet: { backgroundColor: '#FFF', borderTopLeftRadius: 36, borderTopRightRadius: 36, paddingHorizontal: 24, paddingBottom: 48 },
+    msgSheetName: { fontSize: 20, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 8, marginTop: 4 },
+    reportRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+    reportRowText: { fontSize: 16, fontFamily: theme.typography.fontFamily.semibold, color: '#1E293B' },
+    cancelBtn: { backgroundColor: '#F8FAFC', borderRadius: 20, paddingVertical: 18, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+    cancelBtnText: { fontSize: 16, fontFamily: theme.typography.fontFamily.bold, color: '#64748B' },
 });

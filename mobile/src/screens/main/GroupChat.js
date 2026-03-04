@@ -1,56 +1,64 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity, Image,
     FlatList, TextInput, KeyboardAvoidingView, Platform,
     Modal, ScrollView, Alert
 } from 'react-native';
+import { Keyboard } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../theme/theme';
-import { DUMMY_USERS } from '../../data/dummy';
 import { useToast } from '../../context/ToastContext';
+import { useSocket } from '../../context/SocketContext';
+import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../api/authService';
+import { ModernPlaceholder } from '../../components/common/ModernPlaceholder';
+import TypingIndicator from '../../components/common/TypingIndicator';
 
-// ── Static group data (replace with backend later) ─────────────────────────────
-const DUMMY_GROUP = {
-    id: 'g1',
-    name: 'SF Coffee Lovers ☕',
-    members: [
-        { id: 'u1', name: 'Alice Cooper', avatar: 'https://i.pravatar.cc/150?img=1', isAdmin: false },
-        { id: 'u3', name: 'Charlie Brown', avatar: 'https://i.pravatar.cc/150?img=15', isAdmin: true },
-        { id: 'u6', name: 'Fatima Malik', avatar: 'https://i.pravatar.cc/150?img=25', isAdmin: false },
-        { id: 'u7', name: 'George Kim', avatar: 'https://i.pravatar.cc/150?img=33', isAdmin: false },
-    ],
-    commonInterest: 'Coffee',
-    description: 'A group for coffee lovers in SF to meet up, chat and explore new cafés together!',
-    createdAt: 'Feb 2026',
+// Interest-based group chat
+const getSafeId = (item, suffix = '') => {
+    if (!item) return `null-${Date.now()}${suffix}`;
+    if (typeof item === 'string') return item + suffix;
+
+    // Cascading ID check
+    const raw = item._id || item.id || item.user?._id || item.user?.id || item.user || item;
+
+    if (typeof raw === 'string') return raw + suffix;
+    if (raw && typeof raw === 'object') {
+        const str = raw.toString();
+        // If it's a real ID (like Mongoose ObjectId), toString() is the hex string.
+        // If it's a plain object, toString() is '[object Object]'.
+        if (str && str !== '[object Object]') return str + suffix;
+
+        // Deep nested check
+        const deep = raw._id || raw.id;
+        if (deep) return deep.toString() + suffix;
+    }
+
+    return `fallback-${Date.now()}${suffix}`;
 };
-
-const INITIAL_MESSAGES = [
-    { id: 'm0', text: 'Hey everyone! Glad to have you all here ☕', sender: 'u3', senderName: 'Charlie', time: '10:00 AM', reactions: [] },
-    { id: 'm1', text: 'This is awesome! Are we planning a meetup?', sender: 'u1', senderName: 'Alice', time: '10:02 AM', reactions: [] },
-    { id: 'm2', text: 'Yes! This Saturday, Blue Bottle Coffee at 10am 🙌', sender: 'u6', senderName: 'Fatima', time: '10:05 AM', reactions: [{ emoji: '🙌', count: 2 }] },
-    { id: 'm3', text: "I'll be there! Anyone else coming?", sender: 'me', senderName: 'You', time: '10:07 AM', reactions: [] },
-    { id: 'm4', text: "Count me in! I'll bring my chess board 😄", sender: 'u7', senderName: 'George', time: '10:09 AM', reactions: [{ emoji: '😄', count: 1 }] },
-    { id: 'm5', text: 'Perfect. See you all Saturday!', sender: 'u3', senderName: 'Charlie', time: '10:11 AM', reactions: [] },
-];
 
 const EMOJI_REACTIONS = ['👍', '❤️', '😄', '🔥', '🙌', '☕'];
 
 function AvatarStack({ members }) {
+    if (!members || members.length === 0) return null;
     return (
-        <View style={{ flexDirection: 'row' }}>
-            {members.slice(0, 4).map((m, i) => (
-                <Image
-                    key={m.id}
-                    source={{ uri: m.avatar }}
-                    style={[styles.stackAvatar, { marginLeft: i === 0 ? 0 : -10, zIndex: 10 - i }]}
-                />
-            ))}
-            {members.length > 4 && (
-                <View style={[styles.stackAvatar, styles.stackExtra, { marginLeft: -10 }]}>
-                    <Text style={styles.stackExtraText}>+{members.length - 4}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {members.slice(0, 3).map((m, i) => {
+                const avatarUrl = m.avatar || m.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name || m.user?.name || 'U')}&background=random`;
+                return (
+                    <Image
+                        key={getSafeId(m, `stack-${i}`)}
+                        source={{ uri: avatarUrl }}
+                        style={[styles.stackAvatar, { marginLeft: i === 0 ? 0 : -14, zIndex: 10 - i }]}
+                    />
+                );
+            })}
+            {members.length > 3 && (
+                <View style={[styles.stackAvatar, styles.stackExtra, { marginLeft: -14, zIndex: 0 }]}>
+                    <Text style={styles.stackExtraText}>+{members.length - 3}</Text>
                 </View>
             )}
         </View>
@@ -58,109 +66,457 @@ function AvatarStack({ members }) {
 }
 
 export default function GroupChat({ navigation, route }) {
+    const { socket, on, emit, emitWithAck } = useSocket();
+    const { user: me } = useAuth();
+    const { showToast, confirmAction } = useToast();
     const insets = useSafeAreaInsets();
-    const { confirmAction, showToast } = useToast();
-    const initialGroup = route?.params?.group || DUMMY_GROUP;
+    const flatRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
 
-    const [group, setGroup] = useState(initialGroup);
-    const [messages, setMessages] = useState(INITIAL_MESSAGES);
-    const [text, setText] = useState('');
+    const [group, setGroup] = useState(route.params?.group || {});
+    const [messages, setMessages] = useState([]);
+    const [inputText, setInputText] = useState('');
     const [showInfo, setShowInfo] = useState(false);
     const [showAddMember, setShowAddMember] = useState(false);
     const [showReactionPicker, setShowReactionPicker] = useState(null);
     const [editingName, setEditingName] = useState(false);
     const [groupNameDraft, setGroupNameDraft] = useState(group.name);
     const [selectedMembers, setSelectedMembers] = useState([]);
-    const [infoTab, setInfoTab] = useState('members'); // 'members' | 'requests'
-    const [pendingRequests, setPendingRequests] = useState([
-        { id: 'pr1', name: 'David Kim', avatar: 'https://i.pravatar.cc/150?img=33', interest: 'Coffee', time: '2h ago' },
-        { id: 'pr2', name: 'Sophia Lee', avatar: 'https://i.pravatar.cc/150?img=47', interest: 'Coffee · Travel', time: '5h ago' },
-    ]);
+    const [infoTab, setInfoTab] = useState('members');
+    const [pendingRequests, setPendingRequests] = useState([]);
+    const [isSending, setIsSending] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [typingUsers, setTypingUsers] = useState([]);
+    const [availableToAdd, setAvailableToAdd] = useState([]);
     const [reportVisible, setReportVisible] = useState(false);
 
-    const flatRef = useRef(null);
+    // ── Derived: am I an admin of this group? ──────────────────────────────────
+    const myId = (me?._id || me?.id || me?.user?._id)?.toString();
+    const isAmAdmin = (group.members || []).some(m => {
+        const mId = (m.user?._id || m.user?.id || m.user || m.id)?.toString();
+        return mId === myId && m.role === 'admin';
+    });
 
-    // Users not yet in the group
-    const availableToAdd = DUMMY_USERS.filter(u => !group.members.find(m => m.id === u.id));
+    const fetchGroupDetails = async () => {
+        try {
+            const myGroups = await authService.getMyGroups();
+            const currentGroup = myGroups.find(g => (g._id || g.id) === (group._id || group.id));
+            if (currentGroup) {
+                setGroup(currentGroup);
+            }
+        } catch (error) {
+            console.error('Failed to fetch group details:', error);
+        }
+    };
+
+    // Initial setup and socket listeners
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                if (group?._id) {
+                    const data = await authService.getGroupMessages(group._id);
+                    setMessages(data || []);
+
+                    // Find and mark unread messages as Read
+                    const unread = data.filter(m => {
+                        if (getSafeId(m.sender) === getSafeId(me)) return false;
+                        return !m.readBy?.some(r => getSafeId(r.user) === getSafeId(me));
+                    });
+
+                    unread.forEach(m => {
+                        authService.markMessageAsRead(m._id || m.id).catch(e => console.log('Read Ack Failed:', e));
+                        emitWithAck('message_read', {
+                            messageIds: [m._id || m.id],
+                            senderId: getSafeId(m.sender),
+                            readerId: getSafeId(me)
+                        }).catch(() => { });
+                    });
+                }
+            } catch (err) {
+                showToast('Error', 'Failed to load group messages', 'error');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchHistory();
+        fetchGroupDetails(); // Additional fetch to ensure fresh member/request data
+
+        if (group?._id) {
+            // Join group room
+            emit('join_group', group._id);
+
+            // Fetch available friends to add
+            const fetchFriends = async () => {
+                try {
+                    const friends = await authService.getConnections();
+                    const existingMemberIds = group.members.map(m => (m.user?._id || m.user || m.id));
+                    setAvailableToAdd(friends.map(f => f.user).filter(u => !existingMemberIds.includes(u._id)));
+                } catch (err) {
+                    console.error('[GroupChat] Friends fetch failed:', err);
+                }
+            };
+            fetchFriends();
+
+            // Listen for new messages
+            const offMsg = on('new_group_message', (msg) => {
+                const msgGroupId = (msg.groupId || msg.group || msg.groupData?._id || msg.groupData?.id)?.toString();
+                const currentGroupId = (group._id || group.id)?.toString();
+
+                if (msgGroupId === currentGroupId) {
+                    setMessages(prev => {
+                        const newId = (msg._id || msg.id)?.toString();
+                        if (prev.some(m => (m._id || m.id)?.toString() === newId)) return prev;
+                        return [...prev, msg].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                    });
+
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
+
+                    // Auto-mark as read since we are active in the chat
+                    if (getSafeId(msg.sender) !== getSafeId(me)) {
+                        authService.markMessageAsRead(msg._id || msg.id).catch(e => console.log('Read Ack Failed:', e));
+                    }
+                } else if (getSafeId(msg.sender) !== getSafeId(me)) {
+                    // Message for ANOTHER group, just mark as Delivered
+                    authService.markMessageAsDelivered(msg._id || msg.id).catch(e => console.log('Delivered Ack Failed:', e));
+                }
+            });
+
+            // Listen for typing
+            const offTyping = on('typing', (data) => {
+                if (data.groupId === group._id && data.senderId !== (me?.id || me?._id)) {
+                    const typingUser = group.members?.find(m => (m.user?._id || m.user || m.id) === data.senderId);
+                    if (data.isTyping) {
+                        setTypingUsers(prev => {
+                            if (prev.find(u => u.id === data.senderId)) return prev;
+                            return [...prev, {
+                                id: data.senderId,
+                                name: data.senderName || typingUser?.name || typingUser?.user?.name || 'Someone',
+                                avatar: data.senderAvatar || typingUser?.avatar || typingUser?.user?.avatar
+                            }];
+                        });
+                    } else {
+                        setTypingUsers(prev => prev.filter(u => u.id !== data.senderId));
+                    }
+                }
+            });
+
+            return () => {
+                offMsg();
+                offTyping();
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                emitWithAck('typing', { groupId: group._id, senderId: (me?.id || me?._id), senderName: me?.name, senderAvatar: me?.avatar, isTyping: false, receiverId: null }).catch(() => {});
+            };
+        }
+    }, [group?._id, me?._id, me?.avatar]);
+
+    // Real-time group admin event listeners
+    useEffect(() => {
+        if (!group?._id) return;
+        const gId = (group._id || group.id)?.toString();
+
+        const offGroupUpdate = on('group_updated', (data) => {
+            if (data.groupId?.toString() === gId) {
+                setGroup(prev => ({ ...prev, name: data.name, description: data.description, emoji: data.emoji }));
+            }
+        });
+
+        const offMembersUpdate = on('group_members_updated', (data) => {
+            if (data.groupId?.toString() === gId) {
+                setGroup(prev => ({ ...prev, members: data.members }));
+            }
+        });
+
+        const offMemberRemoved = on('group_member_removed', (data) => {
+            if (data.groupId?.toString() === gId) {
+                const myId = (me?._id || me?.id)?.toString();
+                if (data.userId?.toString() === myId) {
+                    showToast('Removed', 'You were removed from this group.', 'error');
+                } else {
+                    setGroup(prev => ({
+                        ...prev,
+                        members: prev.members.filter(m => (m.user?._id || m.user?.id || m.user)?.toString() !== data.userId?.toString())
+                    }));
+                }
+            }
+        });
+
+        const offRoleChanged = on('group_role_changed', (data) => {
+            if (data.groupId?.toString() === gId) {
+                setGroup(prev => ({
+                    ...prev,
+                    members: prev.members.map(m => {
+                        const mId = (m.user?._id || m.user?.id || m.user)?.toString();
+                        return mId === data.userId?.toString() ? { ...m, role: data.role } : m;
+                    })
+                }));
+            }
+        });
+
+        const offReactionUpdate = on('message_reaction_update', (data) => {
+            setMessages(prev => prev.map(m =>
+                (m._id || m.id)?.toString() === data.messageId?.toString()
+                    ? { ...m, reactions: data.reactions }
+                    : m
+            ));
+        });
+
+        const offMessageDelivered = on('message_delivered', (data) => {
+            setMessages(prev => prev.map(m => {
+                if ((m._id || m.id)?.toString() === data.messageId?.toString()) {
+                    const deliveredTo = m.deliveredTo || [];
+                    if (!deliveredTo.some(d => d.user?.toString() === data.userId?.toString())) {
+                        return { ...m, deliveredTo: [...deliveredTo, { user: data.userId, deliveredAt: new Date().toISOString() }] };
+                    }
+                }
+                return m;
+            }));
+        });
+
+        const offMessageRead = on('message_read', (data) => {
+            setMessages(prev => prev.map(m => {
+                if ((m._id || m.id)?.toString() === data.messageId?.toString()) {
+                    const readBy = m.readBy || [];
+                    if (!readBy.some(r => r.user?.toString() === data.userId?.toString())) {
+                        return { ...m, readBy: [...readBy, { user: data.userId, readAt: new Date().toISOString() }] };
+                    }
+                }
+                return m;
+            }));
+        });
+
+        return () => {
+            offGroupUpdate(); offMembersUpdate(); offMemberRemoved();
+            offRoleChanged(); offReactionUpdate(); offMessageDelivered(); offMessageRead();
+        };
+    }, [group?._id, me?._id]);
 
     // ── Send message ───────────────────────────────────────────────────────────
-    const sendMessage = () => {
-        if (!text.trim()) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        const msg = {
-            id: `m${Date.now()}`,
-            text: text.trim(),
-            sender: 'me',
-            senderName: 'You',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            reactions: [],
-        };
-        setMessages(prev => [...prev, msg]);
-        setText('');
-        setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
+    const handleType = (text) => {
+        setInputText(text);
+        if (group?._id) {
+            const isCurrentlyTyping = text.length > 0;
+            emitWithAck('typing', {
+                groupId: group._id,
+                senderId: (me?.id || me?._id),
+                senderName: me?.name || 'User',
+                senderAvatar: me?.avatar,
+                isTyping: isCurrentlyTyping,
+                receiverId: null // Explicitly NOT a direct chat
+            }).catch(() => {});
+
+            // Clear existing timeout
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+            // Set timeout to clear typing after 3 seconds of pause (only if there is text)
+            if (isCurrentlyTyping) {
+                typingTimeoutRef.current = setTimeout(() => {
+                    emitWithAck('typing', {
+                        groupId: group._id,
+                        senderId: (me?.id || me?._id),
+                        senderName: me?.name || 'User',
+                        senderAvatar: me?.avatar,
+                        isTyping: false,
+                        receiverId: null
+                    }).catch(() => {});
+                }, 3000);
+            }
+        }
+    };
+
+    const sendMessage = async () => {
+        if (!inputText.trim() || isSending) return;
+
+        try {
+            setIsSending(true);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+            // Clear typing indicator immediately on send
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            emitWithAck('typing', {
+                groupId: group._id,
+                senderId: (me?.id || me?._id),
+                senderName: me?.name || 'User',
+                isTyping: false
+            }).catch(() => {});
+
+            const messageData = {
+                groupId: group._id || group.id,
+                text: inputText.trim()
+            };
+
+            const response = await authService.sendMessage(messageData);
+
+            // Snappy UI update
+            const newMsg = response.success ? response.data : {
+                _id: Date.now().toString(),
+                text: inputText.trim(),
+                sender: {
+                    _id: (me?._id || me?.id || me?.user?._id || me?.user?.id),
+                    name: me?.name || 'You',
+                    avatar: me?.avatar
+                },
+                senderName: me?.name || 'You',
+                createdAt: new Date().toISOString(),
+                groupId: (group._id || group.id)
+            };
+
+            setMessages(prev => {
+                const realId = (newMsg._id || newMsg.id)?.toString();
+                // If socket already added this message, don't add it again!
+                if (prev.some(m => (m._id || m.id)?.toString() === realId)) {
+                    return prev;
+                }
+                return [...prev, newMsg];
+            });
+            setInputText('');
+            setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
+        } catch (err) {
+            showToast('Error', err.message || 'Failed to send message', 'error');
+        } finally {
+            setIsSending(false);
+        }
     };
 
     // ── Add reaction ───────────────────────────────────────────────────────────
-    const addReaction = (msgId, emoji) => {
+    const addReaction = async (msgId, emoji) => {
+        // Optimistic update first
         setMessages(prev => prev.map(m => {
-            if (m.id !== msgId) return m;
-            const existing = m.reactions.find(r => r.emoji === emoji);
-            if (existing) {
-                return { ...m, reactions: m.reactions.map(r => r.emoji === emoji ? { ...r, count: r.count + 1 } : r) };
+            if (getSafeId(m) !== msgId) return m;
+            const reactions = m.reactions || [];
+            const myId = getSafeId(me);
+            const existing = reactions.findIndex(r => r.emoji === emoji && getSafeId(r.user) === myId);
+            if (existing > -1) {
+                const updated = [...reactions];
+                updated.splice(existing, 1);
+                return { ...m, reactions: updated };
             }
-            return { ...m, reactions: [...m.reactions, { emoji, count: 1 }] };
+            return { ...m, reactions: [...reactions, { emoji, user: { _id: me?._id || me?.id, name: me?.name } }] };
         }));
         setShowReactionPicker(null);
+
+        // Persist to backend
+        try {
+            const res = await authService.toggleReaction(msgId, emoji);
+            if (res?.data?.reactions) {
+                setMessages(prev => prev.map(m =>
+                    getSafeId(m) === msgId ? { ...m, reactions: res.data.reactions } : m
+                ));
+            }
+        } catch (err) {
+            console.warn('Reaction save failed:', err.message);
+        }
     };
 
     // ── Add members ─────────────────────────────────────────────────────────────
-    const confirmAddMembers = () => {
-        const newMembers = availableToAdd
-            .filter(u => selectedMembers.includes(u.id))
-            .map(u => ({ id: u.id, name: u.name, avatar: u.avatar, isAdmin: false }));
-        if (newMembers.length === 0) return;
-        setGroup(prev => ({ ...prev, members: [...prev.members, ...newMembers] }));
-        // system message
-        const names = newMembers.map(m => m.name.split(' ')[0]).join(', ');
-        setMessages(prev => [...prev, {
-            id: `sys${Date.now()}`, text: `${names} joined the group`, sender: 'system', senderName: '', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), reactions: [],
-        }]);
-        setSelectedMembers([]);
-        setShowAddMember(false);
+    const confirmAddMembers = async () => {
+        if (selectedMembers.length === 0) return;
+        try {
+            const res = await authService.addGroupMembers(group._id || group.id, selectedMembers);
+            if (res?.data) {
+                setGroup(res.data);
+                const names = availableToAdd
+                    .filter(u => selectedMembers.includes(getSafeId(u)))
+                    .map(u => u.name.split(' ')[0]).join(', ');
+                setMessages(prev => [...prev, {
+                    _id: `sys${Date.now()}`,
+                    text: `${names} joined the group`,
+                    sender: 'system',
+                    createdAt: new Date().toISOString()
+                }]);
+                showToast('Success', 'Members added successfully.', 'success');
+            }
+        } catch (err) {
+            showToast('Error', err.message || 'Failed to add members', 'error');
+        } finally {
+            setSelectedMembers([]);
+            setShowAddMember(false);
+        }
     };
 
     // ── Remove member ───────────────────────────────────────────────────────────
     const removeMember = (memberId, memberName) => {
         confirmAction({
             title: 'Remove Member',
-            message: `Remove ${memberName} from the group?`,
-            onConfirm: () => {
-                setGroup(prev => ({ ...prev, members: prev.members.filter(m => m.id !== memberId) }));
-                setMessages(prev => [...prev, {
-                    id: `sys${Date.now()}`, text: `${memberName.split(' ')[0]} was removed from the group`, sender: 'system', senderName: '', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), reactions: [],
-                }]);
-                showToast('Member Removed', `${memberName} is no longer in the group.`, 'success');
+            message: `Are you sure you want to remove ${memberName} from this group?`,
+            onConfirm: async () => {
+                try {
+                    await authService.removeGroupMember(group._id || group.id, memberId);
+                    setGroup(prev => ({
+                        ...prev,
+                        members: prev.members.filter(m => (m.user?._id || m.user?.id || m.user)?.toString() !== memberId?.toString())
+                    }));
+                    setMessages(prev => [...prev, {
+                        _id: `sys${Date.now()}`,
+                        text: `${memberName.split(' ')[0]} was removed from the group`,
+                        sender: 'system',
+                        createdAt: new Date().toISOString()
+                    }]);
+                    showToast('Success', `${memberName} removed from group.`, 'success');
+                } catch (err) {
+                    showToast('Error', err.message || 'Failed to remove member', 'error');
+                }
             },
             confirmText: 'Remove',
             confirmStyle: 'destructive'
         });
     };
 
-    // ── Accept / Decline join request ────────────────────────────────────────────
-    const acceptRequest = (req) => {
-        setGroup(prev => ({ ...prev, members: [...prev.members, { id: req.id, name: req.name, avatar: req.avatar, isAdmin: false }] }));
-        setPendingRequests(prev => prev.filter(r => r.id !== req.id));
-        setMessages(prev => [...prev, { id: `sys${Date.now()}`, text: `${req.name.split(' ')[0]} joined the group`, sender: 'system', senderName: '', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), reactions: [] }]);
+    // ── Accept / Decline join request ─────────────────────────────────────────
+    const acceptRequest = async (req) => {
+        const reqId = req._id || req.id;
+        const groupId = group._id || group.id;
+
+        // Optimistic update
+        setGroup(prev => ({
+            ...prev,
+            members: [...prev.members, { user: { _id: reqId, name: req.name, avatar: req.avatar }, role: 'member' }]
+        }));
+        setPendingRequests(prev => prev.filter(r => (r._id || r.id) !== reqId));
+        setMessages(prev => [...prev, {
+            _id: `sys${Date.now()}`, text: `${req.name.split(' ')[0]} joined the group`, sender: 'system', createdAt: new Date().toISOString()
+        }]);
+
+        try {
+            await authService.handleGroupRequest(groupId, reqId, 'accept');
+            showToast('Accepted', `${req.name} joined the group.`, 'success');
+        } catch (err) {
+            showToast('Error', err.message || 'Failed to accept request', 'error');
+            fetchGroupDetails(); // Rollback to server state
+        }
     };
 
-    const declineRequest = (id) => setPendingRequests(prev => prev.filter(r => r.id !== id));
+    const declineRequest = async (id) => {
+        const reqId = id;
+        const groupId = group._id || group.id;
+
+        // Optimistic update
+        setPendingRequests(prev => prev.filter(r => (r._id || r.id) !== reqId));
+
+        try {
+            await authService.handleGroupRequest(groupId, reqId, 'decline');
+            showToast('Declined', 'Join request declined.', 'info');
+        } catch (err) {
+            showToast('Error', err.message || 'Failed to decline request', 'error');
+            fetchGroupDetails(); // Rollback to server state
+        }
+    };
 
     // ── Save group name ─────────────────────────────────────────────────────────
-    const saveGroupName = () => {
-        if (groupNameDraft.trim()) {
-            setGroup(prev => ({ ...prev, name: groupNameDraft.trim() }));
-        }
+    const saveGroupName = async () => {
+        if (!groupNameDraft.trim()) return setEditingName(false);
+        const newName = groupNameDraft.trim();
+        setGroup(prev => ({ ...prev, name: newName })); // Optimistic
         setEditingName(false);
+        try {
+            await authService.updateGroup(group._id || group.id, { name: newName });
+            showToast('Saved', 'Group name updated.', 'success');
+        } catch (err) {
+            setGroup(prev => ({ ...prev, name: group.name })); // Rollback on error
+            showToast('Error', err.message || 'Failed to save group name', 'error');
+        }
     };
 
     // ── Render message ──────────────────────────────────────────────────────────
@@ -172,21 +528,66 @@ export default function GroupChat({ navigation, route }) {
                 </View>
             );
         }
-        const isMe = item.sender === 'me';
+
+        const myId = getSafeId(me);
+        const senderId = getSafeId(item.sender);
+        const isMe = senderId === myId;
+
         const prevMsg = index > 0 ? messages[index - 1] : null;
-        const showSender = !isMe && (!prevMsg || prevMsg.sender !== item.sender || prevMsg.sender === 'system');
-        const member = group.members.find(m => m.id === item.sender);
+        const prevSenderId = (prevMsg?.sender?._id || prevMsg?.sender?.id || prevMsg?.sender)?.toString();
+        const showSender = !isMe && (!prevMsg || prevSenderId !== senderId || prevMsg.sender === 'system');
+
+        // Find member carefully if sender is just an ID string
+        const member = (typeof item.sender === 'string')
+            ? group.members?.find(m => (m.user?._id || m.user || m.id)?.toString() === senderId)
+            : item.sender; // It's already populated
+
+        const senderName = isMe ? (me?.name || 'You') : (member?.name || member?.user?.name || item.senderName || 'User');
+        const senderAvatar = isMe ? me?.avatar : (member?.avatar || member?.user?.avatar);
+
+        const time = item.createdAt
+            ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : item.time;
+
+        // Calculate Message Receipt Status (for my messages)
+        let receiptIcon = null;
+        let receiptColor = '#94A3B8'; // Grey by default
+
+        if (isMe && item._id && !item._id.startsWith('temp')) {
+            const memberCount = (group.members?.length || 1) - 1; // Exclude myself
+            const deliveredCount = item.deliveredTo?.length || 0;
+            const readCount = item.readBy?.length || 0;
+
+            if (readCount >= memberCount && memberCount > 0) {
+                // Read by everyone -> Double Blue Ticks
+                receiptIcon = 'check-all';
+                receiptColor = '#3B82F6'; // Blue
+            } else if (deliveredCount > 0 || readCount > 0) {
+                // Delivered to at least one person -> Double Grey Ticks
+                receiptIcon = 'check-all';
+            } else {
+                // Sent to server, but no delivery acks yet -> Single Grey Tick
+                receiptIcon = 'check';
+            }
+        } else if (isMe) {
+            // Optimistic / sending state -> Clock
+            receiptIcon = 'clock';
+        }
 
         return (
             <TouchableOpacity
                 activeOpacity={0.85}
-                onLongPress={() => setShowReactionPicker(item.id)}
+                onLongPress={() => setShowReactionPicker(item._id || item.id)}
                 style={[styles.msgRow, isMe && styles.msgRowMe]}
             >
                 {!isMe && (
                     <View style={styles.msgAvatarCol}>
                         {showSender ? (
-                            <Image source={{ uri: member?.avatar || 'https://i.pravatar.cc/150?img=1' }} style={styles.msgAvatar} />
+                            senderAvatar ? (
+                                <Image source={{ uri: senderAvatar }} style={styles.msgAvatar} />
+                            ) : (
+                                <ModernPlaceholder name={senderName} size={32} style={{ borderRadius: 12 }} />
+                            )
                         ) : (
                             <View style={{ width: 32 }} />
                         )}
@@ -195,44 +596,61 @@ export default function GroupChat({ navigation, route }) {
                 <View style={{ maxWidth: '75%' }}>
                     <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
                         {showSender && !isMe && (
-                            <Text style={styles.msgSender}>{item.senderName}</Text>
+                            <Text style={styles.msgSender}>{senderName}</Text>
                         )}
                         <Text style={[styles.msgText, isMe && styles.msgTextMe]}>{item.text}</Text>
-                        <Text style={[styles.msgTime, isMe && styles.msgTimeMe]}>{item.time}</Text>
-                    </View>
-                    {/* Reactions */}
-                    {item.reactions.length > 0 && (
-                        <View style={[styles.reactionsRow, isMe && { alignSelf: 'flex-end', marginRight: 4 }]}>
-                            {item.reactions.map((r, i) => (
-                                <TouchableOpacity key={i} style={styles.reactionBubble} onPress={() => addReaction(item.id, r.emoji)}>
-                                    <Text style={styles.reactionEmoji}>{r.emoji}</Text>
-                                    <Text style={styles.reactionCount}>{r.count}</Text>
-                                </TouchableOpacity>
-                            ))}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginTop: 2 }}>
+                            <Text style={[styles.msgTime, isMe && styles.msgTimeMe, { marginTop: 0 }]}>{time}</Text>
+                            {isMe && receiptIcon && (
+                                <Feather name={receiptIcon} size={14} color={receiptColor} />
+                            )}
                         </View>
-                    )}
+                    </View>
+                    {/* Reactions - grouped by emoji */}
+                    {item.reactions && item.reactions.length > 0 && (() => {
+                        // Group per-user reaction records into { emoji → count, iReacted }
+                        const grouped = {};
+                        const myId = getSafeId(me);
+                        item.reactions.forEach(r => {
+                            const e = r.emoji;
+                            if (!grouped[e]) grouped[e] = { emoji: e, count: 0, iReacted: false };
+                            grouped[e].count++;
+                            if (getSafeId(r.user) === myId) grouped[e].iReacted = true;
+                        });
+                        const pills = Object.values(grouped);
+                        return (
+                            <View style={[styles.reactionsRow, isMe && { alignSelf: 'flex-end', marginRight: 4 }]}>
+                                {pills.map((r) => (
+                                    <TouchableOpacity
+                                        key={r.emoji}
+                                        style={[styles.reactionBubble, r.iReacted && styles.reactionBubbleActive]}
+                                        onPress={() => addReaction(getSafeId(item), r.emoji)}
+                                    >
+                                        <Text style={styles.reactionEmoji}>{r.emoji}</Text>
+                                        {r.count > 1 && <Text style={styles.reactionCount}>{r.count}</Text>}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        );
+                    })()}
                 </View>
             </TouchableOpacity>
         );
     };
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={0}
-        >
+        <View style={styles.container}>
             {/* ── HEADER ── */}
             <LinearGradient
                 colors={['#0F172A', '#1D3461', '#6366F1']}
-                style={[styles.header, { paddingTop: insets.top + 8 }]}
+                style={[styles.header, { paddingTop: insets.top + 12 }]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             >
-                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => { Keyboard.dismiss(); navigation.goBack(); }}>
                     <Feather name="arrow-left" size={20} color="#FFF" />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.headerCenter} onPress={() => setShowInfo(true)} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.headerCenter} onPress={() => { Keyboard.dismiss(); setShowInfo(true); }} activeOpacity={0.8}>
                     <AvatarStack members={group.members} />
                     <View style={styles.headerInfo}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -241,170 +659,270 @@ export default function GroupChat({ navigation, route }) {
                                 <View style={styles.reqBadge}><Text style={styles.reqBadgeText}>{pendingRequests.length}</Text></View>
                             )}
                         </View>
-                        <Text style={styles.headerMembers}>{group.members.length} members · #{group.commonInterest}</Text>
+                        <Text style={styles.headerMembers}>
+                            {typingUsers.length > 0
+                                ? <Text style={{ color: '#4ADE80', fontFamily: theme.typography.fontFamily.bold }}>{typingUsers[0].name.split(' ')[0]} is typing...</Text>
+                                : `${group.members.length} members · #${group.interest || 'General'}`}
+                        </Text>
                     </View>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.iconBtn} onPress={() => setShowAddMember(true)}>
-                    <Feather name="user-plus" size={18} color="#FFF" />
-                </TouchableOpacity>
+                {isAmAdmin ? (
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => setShowAddMember(true)}>
+                        <Feather name="user-plus" size={18} color="#FFF" />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 44 }} />
+                )}
             </LinearGradient>
 
-            {/* ── MESSAGES ── */}
-            <FlatList
-                ref={flatRef}
-                data={messages}
-                keyExtractor={item => item.id}
-                renderItem={renderMessage}
-                contentContainerStyle={styles.msgList}
-                showsVerticalScrollIndicator={false}
-                onContentSizeChange={() => flatRef.current?.scrollToEnd({ animated: false })}
-            />
-
-            {/* ── REACTION PICKER (long press) ── */}
-            {showReactionPicker && (
-                <TouchableOpacity
-                    style={styles.reactionOverlay}
-                    onPress={() => setShowReactionPicker(null)}
-                    activeOpacity={1}
-                >
-                    <View style={styles.reactionPicker}>
-                        {EMOJI_REACTIONS.map(emoji => (
-                            <TouchableOpacity
-                                key={emoji}
-                                style={styles.reactionPickerBtn}
-                                onPress={() => addReaction(showReactionPicker, emoji)}
-                            >
-                                <Text style={styles.reactionPickerEmoji}>{emoji}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </TouchableOpacity>
-            )}
-
-            {/* ── INPUT BAR ── */}
-            <View style={[styles.inputWrap, { paddingBottom: insets.bottom + 8 }]}>
-                <TouchableOpacity style={styles.attachBtn}>
-                    <Feather name="paperclip" size={20} color="#94A3B8" />
-                </TouchableOpacity>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Message the group..."
-                    placeholderTextColor="#94A3B8"
-                    value={text}
-                    onChangeText={setText}
-                    multiline
-                    onSubmitEditing={sendMessage}
-                    blurOnSubmit
+            <KeyboardAvoidingView
+                style={{ flex: 1, backgroundColor: '#FFF' }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={0}
+            >
+                {/* ── MESSAGES ── */}
+                <FlatList
+                    ref={flatRef}
+                    data={[...new Map(messages.map(m => [getSafeId(m), m])).values()]}
+                    keyExtractor={item => getSafeId(item)}
+                    renderItem={renderMessage}
+                    contentContainerStyle={styles.msgList}
+                    showsVerticalScrollIndicator={false}
+                    initialNumToRender={15}
+                    maxToRenderPerBatch={20}
+                    windowSize={10}
+                    removeClippedSubviews
+                    keyboardShouldPersistTaps="handled"
+                    onContentSizeChange={() => flatRef.current?.scrollToEnd({ animated: false })}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <View style={styles.emptyIconBox}>
+                                <Feather name="message-circle" size={40} color="#6366F1" />
+                            </View>
+                            <Text style={styles.emptyTitle}>Your new chat room!</Text>
+                            <Text style={styles.emptySubtitle}>Start the conversation by sending a message below.</Text>
+                        </View>
+                    }
                 />
-                <TouchableOpacity
-                    style={styles.sendBtn}
-                    onPress={sendMessage}
-                    disabled={!text.trim()}
-                >
-                    <LinearGradient
-                        colors={text.trim() ? ['#7C3AED', '#A855F7'] : ['#E2E8F0', '#E2E8F0']}
-                        style={styles.sendBtnGrad}
+
+                {/* ── REACTION PICKER (long press) ── */}
+                {showReactionPicker && (
+                    <TouchableOpacity
+                        style={styles.reactionOverlay}
+                        onPress={() => setShowReactionPicker(null)}
+                        activeOpacity={1}
                     >
-                        <Feather name="send" size={16} color={text.trim() ? '#FFF' : '#94A3B8'} />
-                    </LinearGradient>
-                </TouchableOpacity>
-            </View>
+                        <View style={styles.reactionPicker}>
+                            {EMOJI_REACTIONS.map(emoji => (
+                                <TouchableOpacity
+                                    key={emoji}
+                                    style={styles.reactionPickerBtn}
+                                    onPress={() => addReaction(showReactionPicker, emoji)}
+                                >
+                                    <Text style={styles.reactionPickerEmoji}>{emoji}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </TouchableOpacity>
+                )}
+
+                {/* Typing indicator bubble */}
+                {typingUsers.length > 0 && (
+                    <View style={styles.typingBubbleOuter}>
+                        {typingUsers[0].avatar ? (
+                            <Image source={{ uri: typingUsers[0].avatar }} style={styles.typingAvatar} />
+                        ) : (
+                            <ModernPlaceholder name={typingUsers[0].name} size={28} style={{ borderRadius: 10, marginRight: 8 }} />
+                        )}
+                        <View style={styles.typingBubble}>
+                            <TypingIndicator dotColor="#94A3B8" dotSize={5} spacing={3} />
+                        </View>
+                    </View>
+                )}
+
+                {/* ── INPUT ── */}
+                <View style={[styles.inputWrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+                    <TouchableOpacity style={styles.attachBtn} onPress={() => Alert.alert('Coming soon!', 'File sharing will be available in the next update.')} activeOpacity={0.75}>
+                        <Feather name="paperclip" size={20} color="#64748B" />
+                    </TouchableOpacity>
+
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Message..."
+                        placeholderTextColor="#94A3B8"
+                        multiline
+                        value={inputText}
+                        onChangeText={handleType}
+                    />
+
+                    <TouchableOpacity
+                        style={[styles.sendBtn, !inputText.trim() && { opacity: 0.5 }]}
+                        onPress={sendMessage}
+                        disabled={!inputText.trim()}
+                        activeOpacity={0.8}
+                    >
+                        <LinearGradient
+                            colors={['#6366F1', '#7C3AED']}
+                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                            style={styles.sendBtnGrad}
+                        >
+                            <Feather name="send" size={17} color="#FFF" style={{ marginLeft: 2 }} />
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+            </KeyboardAvoidingView>
 
             {/* ══════════════════════════════════════════════════
-                 MODAL 1 — GROUP INFO
+                 MODALS
             ══════════════════════════════════════════════════ */}
+
+            {/* GROUP INFO */}
             <Modal visible={showInfo} animationType="slide" transparent>
                 <View style={styles.overlay}>
+                    <TouchableOpacity
+                        style={{ flex: 1 }}
+                        activeOpacity={1}
+                        onPress={() => setShowInfo(false)}
+                    />
                     <View style={styles.sheet}>
                         <View style={styles.sheetHandle} />
 
-                        {/* Group avatar / name */}
                         <View style={styles.infoHeader}>
-                            <LinearGradient colors={['#0F172A', '#6366F1']} style={styles.infoGroupIcon}>
-                                <Text style={{ fontSize: 32 }}>☕</Text>
+                            <LinearGradient
+                                colors={['#6366F1', '#4F46E5']}
+                                style={styles.infoGroupIcon}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                <Text style={{ fontSize: 36 }}>{group.emoji || '👥'}</Text>
                             </LinearGradient>
-                            {editingName ? (
+
+                            {editingName && isAmAdmin ? (
                                 <View style={styles.nameEditRow}>
-                                    <TextInput style={styles.nameEditInput} value={groupNameDraft} onChangeText={setGroupNameDraft} autoFocus onSubmitEditing={saveGroupName} />
+                                    <TextInput
+                                        style={styles.nameEditInput}
+                                        value={groupNameDraft}
+                                        onChangeText={setGroupNameDraft}
+                                        autoFocus
+                                        onSubmitEditing={saveGroupName}
+                                    />
                                     <TouchableOpacity onPress={saveGroupName} style={styles.nameEditSave}>
                                         <Text style={styles.nameEditSaveText}>Save</Text>
                                     </TouchableOpacity>
                                 </View>
                             ) : (
-                                <TouchableOpacity onPress={() => { setGroupNameDraft(group.name); setEditingName(true); }} style={styles.nameRow}>
+                                isAmAdmin ? (
+                                    <TouchableOpacity
+                                        onPress={() => { setGroupNameDraft(group.name); setEditingName(true); }}
+                                        style={styles.nameRow}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.infoGroupName}>{group.name}</Text>
+                                        <Feather name="edit-2" size={16} color="#94A3B8" style={{ marginLeft: 8 }} />
+                                    </TouchableOpacity>
+                                ) : (
                                     <Text style={styles.infoGroupName}>{group.name}</Text>
-                                    <Feather name="edit-2" size={14} color="#94A3B8" style={{ marginLeft: 8 }} />
-                                </TouchableOpacity>
+                                )
                             )}
-                            <Text style={styles.infoGroupDesc}>{group.description}</Text>
-                            <Text style={styles.infoCreated}>Created {group.createdAt}</Text>
+                            <Text style={styles.infoGroupDesc}>{group.description || `Group chat for ${group.name}`}</Text>
+                            <Text style={styles.infoCreated}>Created {group.createdAt || new Date().toISOString()}</Text>
                         </View>
 
-                        <View style={styles.infoDivider} />
-
-                        {/* TAB SWITCHER: Members | Join Requests */}
-                        <View style={styles.infoTabRow}>
-                            <TouchableOpacity
-                                style={[styles.infoTab, infoTab === 'members' && styles.infoTabActive]}
-                                onPress={() => setInfoTab('members')} activeOpacity={0.8}
-                            >
-                                <Text style={[styles.infoTabText, infoTab === 'members' && styles.infoTabTextActive]}>
-                                    {group.members.length} Members
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.infoTab, infoTab === 'requests' && styles.infoTabActive]}
-                                onPress={() => setInfoTab('requests')} activeOpacity={0.8}
-                            >
-                                <Text style={[styles.infoTabText, infoTab === 'requests' && styles.infoTabTextActive]}>
-                                    Requests {pendingRequests.length > 0 ? `(${pendingRequests.length})` : ''}
-                                </Text>
-                            </TouchableOpacity>
+                        <View style={styles.infoTabContainer}>
+                            <View style={styles.infoTabRow}>
+                                <TouchableOpacity
+                                    style={[styles.infoTab, infoTab === 'members' && styles.infoTabActive]}
+                                    onPress={() => setInfoTab('members')}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={[styles.infoTabText, infoTab === 'members' && styles.infoTabTextActive]}>
+                                        {group.members?.length || 0} Members
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.infoTab, infoTab === 'requests' && styles.infoTabActive]}
+                                    onPress={() => setInfoTab('requests')}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={[styles.infoTabText, infoTab === 'requests' && styles.infoTabTextActive]}>
+                                        Requests
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
-                        {/* MEMBERS TAB */}
                         {infoTab === 'members' && (
-                            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 240 }}>
-                                {group.members.map(m => (
-                                    <View key={m.id} style={styles.memberRow}>
-                                        <Image source={{ uri: m.avatar }} style={styles.memberAvatar} />
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={styles.memberName}>{m.name}</Text>
-                                            {m.isAdmin && (
-                                                <View style={styles.adminChip}>
-                                                    <Feather name="shield" size={10} color="#6366F1" />
-                                                    <Text style={styles.adminChipText}>Admin</Text>
+                            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 280 }}>
+                                {(group.members || []).map((m, i) => {
+                                    const memberId = (m.user?._id || m.user?.id || m.user || m.id)?.toString();
+                                    const memberName = m.user?.name || m.name || 'User';
+                                    const memberAvatar = m.user?.avatar || m.avatar;
+                                    const isSelf = memberId === myId;
+                                    const memberIsAdmin = m.role === 'admin';
+
+                                    return (
+                                        <View key={getSafeId(m, `member-${i}`)} style={styles.memberRow}>
+                                            {memberAvatar ? (
+                                                <Image source={{ uri: memberAvatar }} style={styles.memberAvatar} />
+                                            ) : (
+                                                <ModernPlaceholder name={memberName} size={48} style={{ borderRadius: 15 }} />
+                                            )}
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={styles.memberName}>{memberName}{isSelf ? ' (You)' : ''}</Text>
+                                                {memberIsAdmin && (
+                                                    <View style={styles.adminChip}>
+                                                        <Feather name="shield" size={10} color="#6366F1" />
+                                                        <Text style={styles.adminChipText}>Admin</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                            {/* Admin-only controls */}
+                                            {isAmAdmin && !isSelf && (
+                                                <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                    <TouchableOpacity
+                                                        style={[styles.removeMemberBtn, { backgroundColor: memberIsAdmin ? '#FEF9C3' : '#EEF0FF' }]}
+                                                        onPress={() => authService.updateMemberRole(group._id || group.id, memberId, memberIsAdmin ? 'member' : 'admin')
+                                                            .then(() => fetchGroupDetails())
+                                                            .catch(e => showToast('Error', e.message, 'error'))}
+                                                    >
+                                                        <Feather name={memberIsAdmin ? 'shield-off' : 'shield'} size={14} color={memberIsAdmin ? '#CA8A04' : '#6366F1'} />
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={styles.removeMemberBtn}
+                                                        onPress={() => removeMember(memberId, memberName)}
+                                                    >
+                                                        <Feather name="user-minus" size={14} color="#EF4444" />
+                                                    </TouchableOpacity>
                                                 </View>
                                             )}
                                         </View>
-                                        {m.id !== 'me' && (
-                                            <TouchableOpacity style={styles.removeMemberBtn} onPress={() => removeMember(m.id, m.name)}>
-                                                <Feather name="user-minus" size={14} color="#EF4444" />
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-                                ))}
+                                    );
+                                })}
                             </ScrollView>
                         )}
 
-                        {/* JOIN REQUESTS TAB */}
-                        {infoTab === 'requests' && (
-                            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 240 }}>
+                        {/* Requests tab - admin only */}
+                        {isAmAdmin && infoTab === 'requests' && (
+                            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 280, minHeight: 150 }}>
                                 {pendingRequests.length === 0 ? (
                                     <View style={styles.emptyRequests}>
-                                        <Feather name="user-check" size={28} color="#CBD5E1" />
+                                        <Feather name="user-check" size={32} color="#CBD5E1" />
                                         <Text style={styles.emptyRequestsText}>No pending requests</Text>
                                     </View>
-                                ) : pendingRequests.map(req => (
-                                    <View key={req.id} style={styles.requestRow}>
-                                        <Image source={{ uri: req.avatar }} style={styles.memberAvatar} />
+                                ) : pendingRequests.map((req, i) => (
+                                    <View key={getSafeId(req, `req-${i}`)} style={styles.requestRow}>
+                                        {req.avatar ? (
+                                            <Image source={{ uri: req.avatar }} style={styles.memberAvatar} />
+                                        ) : (
+                                            <ModernPlaceholder name={req.name} size={48} style={{ borderRadius: 15 }} />
+                                        )}
                                         <View style={{ flex: 1 }}>
                                             <Text style={styles.memberName}>{req.name}</Text>
-                                            <Text style={styles.requestInterest}>Interested in {req.interest} · {req.time}</Text>
+                                            <Text style={styles.requestInterest}>Interested in {req.interest || 'General'} · {req.time || 'now'}</Text>
                                         </View>
                                         <View style={styles.requestActions}>
-                                            <TouchableOpacity style={styles.declineReq} onPress={() => declineRequest(req.id)} activeOpacity={0.8}>
+                                            <TouchableOpacity style={styles.declineReq} onPress={() => declineRequest(req._id || req.id)} activeOpacity={0.8}>
                                                 <Feather name="x" size={14} color="#94A3B8" />
                                             </TouchableOpacity>
                                             <TouchableOpacity style={styles.acceptReq} onPress={() => acceptRequest(req)} activeOpacity={0.85}>
@@ -418,10 +936,10 @@ export default function GroupChat({ navigation, route }) {
 
                         <View style={styles.infoDivider} />
 
-                        {/* Danger zone */}
-                        <View style={{ gap: 8 }}>
+                        <View style={{ gap: 12 }}>
                             <TouchableOpacity
                                 style={styles.leaveGroupBtn}
+                                activeOpacity={0.8}
                                 onPress={() => confirmAction({
                                     title: 'Leave Group',
                                     message: 'Are you sure you want to leave this group?',
@@ -434,27 +952,32 @@ export default function GroupChat({ navigation, route }) {
                                     confirmStyle: 'destructive'
                                 })}
                             >
-                                <Feather name="log-out" size={16} color="#EF4444" style={{ marginRight: 10 }} />
+                                <Feather name="log-out" size={18} color="#EF4444" style={{ marginRight: 10 }} />
                                 <Text style={styles.leaveGroupText}>Leave Group</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={[styles.leaveGroupBtn, { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#F1F5F9' }]}
+                                style={styles.reportBtn}
+                                activeOpacity={0.8}
                                 onPress={() => setReportVisible(true)}
                             >
-                                <Feather name="flag" size={16} color="#94A3B8" style={{ marginRight: 10 }} />
-                                <Text style={[styles.leaveGroupText, { color: '#64748B' }]}>Report Group</Text>
+                                <Feather name="flag" size={18} color="#94A3B8" style={{ marginRight: 10 }} />
+                                <Text style={styles.reportBtnText}>Report Group</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.closeSheetBtn}
+                                activeOpacity={0.8}
+                                onPress={() => setShowInfo(false)}
+                            >
+                                <Text style={styles.closeSheetText}>Close</Text>
                             </TouchableOpacity>
                         </View>
-
-                        <TouchableOpacity style={styles.closeSheetBtn} onPress={() => setShowInfo(false)}>
-                            <Text style={styles.closeSheetText}>Close</Text>
-                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
 
-            {/* REPORT MODAL */}
+            {/* REPORT */}
             <Modal visible={reportVisible} animationType="slide" transparent>
                 <View style={styles.overlay}>
                     <View style={styles.sheet}>
@@ -477,9 +1000,7 @@ export default function GroupChat({ navigation, route }) {
                 </View>
             </Modal>
 
-            {/* ══════════════════════════════════════════════════
-                 MODAL 2 — ADD MEMBER
-            ══════════════════════════════════════════════════ */}
+            {/* ADD MEMBER */}
             <Modal visible={showAddMember} animationType="slide" transparent>
                 <View style={styles.overlay}>
                     <View style={styles.sheet}>
@@ -497,14 +1018,14 @@ export default function GroupChat({ navigation, route }) {
                             </View>
                         ) : (
                             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 340 }}>
-                                {availableToAdd.map(u => {
-                                    const isSelected = selectedMembers.includes(u.id);
+                                {availableToAdd.map((u, i) => {
+                                    const isSelected = selectedMembers.includes(getSafeId(u));
                                     return (
                                         <TouchableOpacity
-                                            key={u.id}
+                                            key={getSafeId(u, `add-${i}`)}
                                             style={[styles.addUserRow, isSelected && styles.addUserRowSelected]}
                                             onPress={() => setSelectedMembers(prev =>
-                                                prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]
+                                                prev.includes(getSafeId(u)) ? prev.filter(id => id !== getSafeId(u)) : [...prev, getSafeId(u)]
                                             )}
                                             activeOpacity={0.75}
                                         >
@@ -512,7 +1033,7 @@ export default function GroupChat({ navigation, route }) {
                                             <View style={{ flex: 1 }}>
                                                 <Text style={styles.addUserName}>{u.name}</Text>
                                                 <Text style={styles.addUserInterests} numberOfLines={1}>
-                                                    {u.interests.slice(0, 3).join(' · ')}
+                                                    {u.interests?.slice(0, 3).join(' · ')}
                                                 </Text>
                                             </View>
                                             <View style={[styles.selectCircle, isSelected && styles.selectCircleActive]}>
@@ -536,132 +1057,258 @@ export default function GroupChat({ navigation, route }) {
                     </View>
                 </View>
             </Modal>
-        </KeyboardAvoidingView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F0F4F8' },
+    container: { flex: 1, backgroundColor: '#F1F5F9' },
 
     // HEADER
-    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 14, gap: 8 },
-    iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
-    headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-    stackAvatar: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: '#7C3AED' },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingBottom: 18,
+        gap: 12,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 12,
+            },
+            android: { elevation: 10 },
+            web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.15)' }
+        }),
+        zIndex: 10
+    },
+    iconBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+    headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
+    stackAvatar: { width: 34, height: 34, borderRadius: 12, borderWidth: 1.5, borderColor: '#FFF' },
     stackExtra: { backgroundColor: 'rgba(255,255,255,0.3)', justifyContent: 'center', alignItems: 'center' },
     stackExtraText: { fontSize: 10, color: '#FFF', fontFamily: theme.typography.fontFamily.bold },
     headerInfo: { flex: 1 },
-    headerName: { fontSize: 15, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
-    headerMembers: { fontSize: 12, color: 'rgba(255,255,255,0.75)', fontFamily: theme.typography.fontFamily.medium },
+    headerName: { fontSize: 17, fontFamily: theme.typography.fontFamily.bold, color: '#FFF', letterSpacing: -0.3 },
+    headerMembers: { fontSize: 11.5, color: 'rgba(255,255,255,0.7)', fontFamily: theme.typography.fontFamily.medium },
 
     // MESSAGES
-    msgList: { paddingHorizontal: 12, paddingVertical: 12, paddingBottom: 8 },
-    msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 4 },
+    msgList: { paddingHorizontal: 16, paddingVertical: 20, paddingBottom: 32 },
+    msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 12 },
     msgRowMe: { justifyContent: 'flex-end' },
-    msgAvatarCol: { marginRight: 8, alignSelf: 'flex-end' },
-    msgAvatar: { width: 32, height: 32, borderRadius: 16 },
-    bubble: { borderRadius: 18, padding: 11, paddingHorizontal: 14 },
+    msgAvatarCol: { marginRight: 10, alignSelf: 'flex-end' },
+    msgAvatar: { width: 34, height: 34, borderRadius: 12 },
+    bubble: {
+        borderRadius: 22,
+        paddingVertical: 11,
+        paddingHorizontal: 16,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#0F172A',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 5,
+            },
+            android: { elevation: 2 },
+            web: { boxShadow: '0px 2px 5px rgba(15, 23, 42, 0.05)' }
+        })
+    },
     bubbleMe: { backgroundColor: '#6366F1', borderBottomRightRadius: 4 },
-    bubbleThem: { backgroundColor: '#FFF', borderBottomLeftRadius: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
-    msgSender: { fontSize: 11, fontFamily: theme.typography.fontFamily.bold, color: '#6366F1', marginBottom: 3 },
-    msgText: { fontSize: 15, fontFamily: theme.typography.fontFamily.medium, color: '#0F172A', lineHeight: 21 },
+    bubbleThem: {
+        backgroundColor: '#FFF',
+        borderBottomLeftRadius: 4,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    msgSender: { fontSize: 11, fontFamily: theme.typography.fontFamily.bold, color: '#6366F1', marginBottom: 5, letterSpacing: 0.2 },
+    msgText: { fontSize: 15.5, fontFamily: theme.typography.fontFamily.medium, color: '#1E293B', lineHeight: 22 },
     msgTextMe: { color: '#FFF' },
-    msgTime: { fontSize: 10, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, marginTop: 3, textAlign: 'right' },
-    msgTimeMe: { color: 'rgba(255,255,255,0.6)' },
+    msgTime: { fontSize: 10, color: '#94A3B8', fontFamily: theme.typography.fontFamily.bold, marginTop: 5, textAlign: 'right' },
+    msgTimeMe: { color: 'rgba(255,255,255,0.75)' },
 
     // SYSTEM MESSAGES
-    sysMsg: { alignItems: 'center', marginVertical: 8 },
-    sysMsgText: { fontSize: 12, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, backgroundColor: '#E2E8F0', paddingHorizontal: 14, paddingVertical: 5, borderRadius: 12 },
+    sysMsg: { alignItems: 'center', marginVertical: 18 },
+    sysMsgText: {
+        fontSize: 12,
+        color: '#64748B',
+        fontFamily: theme.typography.fontFamily.bold,
+        backgroundColor: 'rgba(226, 232, 240, 0.6)',
+        paddingHorizontal: 16,
+        paddingVertical: 7,
+        borderRadius: 15,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5
+    },
 
     // REACTIONS
-    reactionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4, marginLeft: 4 },
-    reactionBubble: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: '#E2E8F0', gap: 3 },
-    reactionEmoji: { fontSize: 13 },
-    reactionCount: { fontSize: 11, color: '#64748B', fontFamily: theme.typography.fontFamily.bold },
+    reactionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 6, marginLeft: 4 },
+    reactionBubble: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF',
+        borderRadius: 14,
+        paddingHorizontal: 9,
+        paddingVertical: 5,
+        borderWidth: 1.5,
+        borderColor: '#F1F5F9',
+        gap: 4,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 4
+    },
+    reactionBubbleActive: {
+        backgroundColor: '#EEF0FF',
+        borderColor: '#6366F1',
+    },
+    reactionEmoji: { fontSize: 14 },
+    reactionCount: { fontSize: 11, color: '#475569', fontFamily: theme.typography.fontFamily.bold },
 
     // REACTION PICKER
-    reactionOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 999 },
-    reactionPicker: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 28, paddingHorizontal: 12, paddingVertical: 10, gap: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
-    reactionPickerBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
-    reactionPickerEmoji: { fontSize: 24 },
+    reactionOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(15,23,42,0.5)', zIndex: 999 },
+    reactionPicker: {
+        flexDirection: 'row',
+        backgroundColor: '#FFF',
+        borderRadius: 36,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        gap: 10,
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 25,
+        elevation: 15,
+        borderWidth: 1,
+        borderColor: '#F1F5F9'
+    },
+    reactionPickerBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
+    reactionPickerEmoji: { fontSize: 26 },
 
-    // INPUT
-    inputWrap: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12, paddingTop: 10, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 8 },
+    inputWrap: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 8 },
     attachBtn: { width: 40, height: 44, justifyContent: 'center', alignItems: 'center' },
     input: { flex: 1, minHeight: 44, maxHeight: 120, backgroundColor: '#F8FAFC', borderRadius: 22, paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 12 : 8, paddingBottom: 10, fontSize: 15, color: '#0F172A', fontFamily: theme.typography.fontFamily.medium, borderWidth: 1, borderColor: '#E2E8F0' },
     sendBtn: { marginBottom: 2 },
     sendBtnGrad: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
 
+    // TYPING
+    typingBubbleOuter: {
+        paddingHorizontal: 16,
+        marginBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: 8
+    },
+    typingAvatar: { width: 28, height: 28, borderRadius: 10, backgroundColor: '#E2E8F0', marginRight: 0 },
+    typingBubble: {
+        backgroundColor: '#FFF',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 18,
+        borderBottomLeftRadius: 4,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+            android: { elevation: 1 },
+            web: { boxShadow: '0px 1px 2px rgba(0,0,0,0.05)' }
+        })
+    },
+
     // MODAL SHARED
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-    sheet: { backgroundColor: '#FFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingBottom: 32 },
-    sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', alignSelf: 'center', marginTop: 12, marginBottom: 8 },
-    sheetTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 },
-    sheetTitle: { fontSize: 18, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A' },
+    overlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.5)', justifyContent: 'flex-end' },
+    sheet: {
+        backgroundColor: '#FFF',
+        borderTopLeftRadius: 36,
+        borderTopRightRadius: 36,
+        paddingHorizontal: 24,
+        paddingBottom: 48,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: -4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 12,
+            },
+            android: { elevation: 20 },
+            web: { boxShadow: '0px -4px 12px rgba(0,0,0,0.1)' }
+        })
+    },
+    sheetHandle: { width: 44, height: 5, borderRadius: 2.5, backgroundColor: '#E2E8F0', alignSelf: 'center', marginTop: 14, marginBottom: 12 },
+    sheetTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 20 },
+    sheetTitle: { fontSize: 20, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', letterSpacing: -0.5 },
 
     // GROUP INFO MODAL
-    infoHeader: { alignItems: 'center', paddingVertical: 16 },
-    infoGroupIcon: { width: 72, height: 72, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-    infoGroupName: { fontSize: 20, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', textAlign: 'center' },
-    nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-    nameEditRow: { flexDirection: 'row', alignItems: 'center', width: '100%', gap: 10, marginBottom: 8 },
-    nameEditInput: { flex: 1, fontSize: 18, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', borderBottomWidth: 2, borderBottomColor: '#6366F1', paddingVertical: 4, textAlign: 'center' },
-    nameEditSave: { backgroundColor: '#6366F1', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
-    nameEditSaveText: { fontSize: 14, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
-    infoGroupDesc: { fontSize: 13, color: '#64748B', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center', lineHeight: 19, marginBottom: 4 },
-    infoCreated: { fontSize: 12, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
-    infoDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 8 },
-    infoSection: { paddingVertical: 8 },
-    infoSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-    infoSectionTitle: { fontSize: 15, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A' },
-    addMemberSmall: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#EEF2FF', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 },
-    addMemberSmallText: { fontSize: 13, fontFamily: theme.typography.fontFamily.bold, color: '#6366F1' },
+    infoHeader: { alignItems: 'center', paddingVertical: 24 },
+    infoGroupIcon: { width: 88, height: 88, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 16, elevation: 8, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10 },
+    infoGroupName: { fontSize: 24, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', textAlign: 'center', letterSpacing: -0.6 },
+    nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    nameEditRow: { flexDirection: 'row', alignItems: 'center', width: '100%', gap: 14, marginBottom: 12 },
+    nameEditInput: { flex: 1, fontSize: 22, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', borderBottomWidth: 2, borderBottomColor: '#6366F1', paddingVertical: 8, textAlign: 'center' },
+    nameEditSave: { backgroundColor: '#6366F1', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14 },
+    nameEditSaveText: { fontSize: 15, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
+    infoGroupDesc: { fontSize: 15, color: '#64748B', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center', lineHeight: 22, marginBottom: 8, paddingHorizontal: 20 },
+    infoCreated: { fontSize: 12.5, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
+    infoDivider: { height: 1.5, backgroundColor: '#F1F5F9', marginVertical: 20 },
+    infoTabContainer: { marginBottom: 20 },
+    infoTabRow: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 25, padding: 4 },
+    infoTab: { flex: 1, paddingVertical: 12, borderRadius: 22, alignItems: 'center' },
+    infoTabActive: {
+        backgroundColor: '#FFF',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 2 }
+            },
+            android: { elevation: 3 },
+            web: { boxShadow: '0px 2px 4px rgba(0,0,0,0.1)' }
+        })
+    },
+    infoTabText: { fontSize: 14, fontFamily: theme.typography.fontFamily.medium, color: '#94A3B8' },
+    infoTabTextActive: { color: '#1E293B', fontFamily: theme.typography.fontFamily.bold },
 
-    // INFO TABS
-    infoTabRow: { flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 14, padding: 4, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9' },
-    infoTab: { flex: 1, paddingVertical: 9, borderRadius: 11, alignItems: 'center' },
-    infoTabActive: { backgroundColor: '#FFF', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
-    infoTabText: { fontSize: 13, fontFamily: theme.typography.fontFamily.medium, color: '#94A3B8' },
-    infoTabTextActive: { color: '#0F172A', fontFamily: theme.typography.fontFamily.bold },
-
-    memberRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
-    memberAvatar: { width: 42, height: 42, borderRadius: 14 },
-    memberName: { fontSize: 14, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 2 },
-    adminChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EEF2FF', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2, alignSelf: 'flex-start' },
-    adminChipText: { fontSize: 10, color: '#6366F1', fontFamily: theme.typography.fontFamily.bold },
-    adminBadge: { fontSize: 11, color: '#F97316', fontFamily: theme.typography.fontFamily.bold, marginTop: 2 },
-    removeMemberBtn: { width: 34, height: 34, borderRadius: 11, backgroundColor: '#FEF2F2', justifyContent: 'center', alignItems: 'center' },
-    // Requests
-    requestRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
-    requestInterest: { fontSize: 12, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, marginTop: 2 },
-    requestActions: { flexDirection: 'row', gap: 8 },
-    declineReq: { width: 34, height: 34, borderRadius: 11, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
-    acceptReq: { width: 34, height: 34, borderRadius: 11, backgroundColor: '#6366F1', justifyContent: 'center', alignItems: 'center' },
-    emptyRequests: { alignItems: 'center', paddingVertical: 24, gap: 8 },
-    emptyRequestsText: { fontSize: 14, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
-
-    // Header request badge
-    reqBadge: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#FACC15', justifyContent: 'center', alignItems: 'center' },
-    reqBadgeText: { fontSize: 10, color: '#0F172A', fontFamily: theme.typography.fontFamily.bold },
-
-    leaveGroupBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 13, backgroundColor: '#FEF2F2', borderRadius: 16, marginTop: 8, marginBottom: 10 },
-    leaveGroupText: { fontSize: 15, fontFamily: theme.typography.fontFamily.bold, color: '#EF4444' },
-    closeSheetBtn: { alignItems: 'center', paddingVertical: 12, backgroundColor: '#F8FAFC', borderRadius: 16 },
-    closeSheetText: { fontSize: 15, fontFamily: theme.typography.fontFamily.bold, color: '#64748B' },
+    memberRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18, gap: 14 },
+    memberAvatar: { width: 48, height: 48, borderRadius: 15, backgroundColor: '#F8FAFC' },
+    memberName: { fontSize: 15.5, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 2 },
+    adminChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#F5F3FF', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start' },
+    adminChipText: { fontSize: 10.5, color: '#6366F1', fontFamily: theme.typography.fontFamily.bold },
+    removeMemberBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF2F2', justifyContent: 'center', alignItems: 'center' },
+    requestRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18, gap: 14 },
+    requestInterest: { fontSize: 13, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, marginTop: 2 },
+    requestActions: { flexDirection: 'row', gap: 12 },
+    declineReq: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#F8FAFC', borderWidth: 1.5, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
+    acceptReq: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#6366F1', justifyContent: 'center', alignItems: 'center' },
+    emptyRequests: { alignItems: 'center', paddingVertical: 40, gap: 12 },
+    emptyRequestsText: { fontSize: 15, color: '#94A3B8', fontFamily: theme.typography.fontFamily.bold },
+    reqBadge: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#FACC15', justifyContent: 'center', alignItems: 'center', borderWeight: 2, borderColor: '#FFF' },
+    reqBadgeText: { fontSize: 11, color: '#0F172A', fontFamily: theme.typography.fontFamily.extrabold },
+    leaveGroupBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, backgroundColor: '#FEF2F2', borderRadius: 20 },
+    leaveGroupText: { fontSize: 16, fontFamily: theme.typography.fontFamily.bold, color: '#EF4444' },
+    reportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, backgroundColor: '#FFF', borderRadius: 20, borderWidth: 1, borderColor: '#F1F5F9' },
+    reportBtnText: { fontSize: 16, fontFamily: theme.typography.fontFamily.bold, color: '#64748B' },
+    closeSheetBtn: { alignItems: 'center', paddingVertical: 16, backgroundColor: '#F8FAFC', borderRadius: 20, marginTop: 4 },
+    closeSheetText: { fontSize: 16, fontFamily: theme.typography.fontFamily.bold, color: '#64748B' },
 
     // ADD MEMBER MODAL
-    addUserRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, borderRadius: 16, gap: 12, marginBottom: 4 },
-    addUserRowSelected: { backgroundColor: '#EFF6FF' },
-    addUserAvatar: { width: 48, height: 48, borderRadius: 24 },
-    addUserName: { fontSize: 15, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 3 },
-    addUserInterests: { fontSize: 12, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
-    selectCircle: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
-    selectCircleActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-    addConfirmBtn: { borderRadius: 16, overflow: 'hidden', marginTop: 16 },
-    addConfirmGrad: { paddingVertical: 15, alignItems: 'center' },
-    addConfirmText: { fontSize: 16, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
-    emptyAddState: { paddingVertical: 40, alignItems: 'center' },
-    emptyAddText: { fontSize: 14, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center' },
-    reportRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-    reportRowText: { fontSize: 15, fontFamily: theme.typography.fontFamily.medium, color: '#334155' },
+    addUserRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 10, borderRadius: 22, gap: 14, marginBottom: 8 },
+    addUserRowSelected: { backgroundColor: '#F5F3FF' },
+    addUserAvatar: { width: 52, height: 52, borderRadius: 18 },
+    addUserName: { fontSize: 16, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 4 },
+    addUserInterests: { fontSize: 13, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
+    selectCircle: { width: 28, height: 28, borderRadius: 14, borderWidth: 2.5, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
+    selectCircleActive: { backgroundColor: '#6366F1', borderColor: '#6366F1' },
+    addConfirmBtn: { borderRadius: 20, overflow: 'hidden', marginTop: 20 },
+    addConfirmGrad: { paddingVertical: 18, alignItems: 'center' },
+    addConfirmText: { fontSize: 17, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
+    emptyAddState: { paddingVertical: 56, alignItems: 'center' },
+    emptyAddText: { fontSize: 15, color: '#94A3B8', fontFamily: theme.typography.fontFamily.bold, textAlign: 'center' },
+    reportRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 20, borderBottomWidth: 1.5, borderBottomColor: '#F1F5F9' },
+    reportRowText: { fontSize: 16, fontFamily: theme.typography.fontFamily.semibold, color: '#1E293B' },
+
+    // EMPTY STATE
+    emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100, paddingHorizontal: 40 },
+    emptyIconBox: { width: 80, height: 80, borderRadius: 30, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+    emptyTitle: { fontSize: 18, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 8 },
+    emptySubtitle: { fontSize: 14, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center', lineHeight: 20 },
 });

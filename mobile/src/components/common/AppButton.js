@@ -122,11 +122,16 @@ const styles = StyleSheet.create({
     base: {
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#6366F1',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
         elevation: 5,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#6366F1',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.25,
+                shadowRadius: 12,
+            },
+            web: { boxShadow: '0 6px 12px rgba(99,102,241,0.25)' }
+        })
     },
     gradient: {
         justifyContent: 'center',
@@ -137,11 +142,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF',
         borderWidth: 1.5,
         borderColor: theme.colors.border,
-        shadowOpacity: 0.05,
+        ...Platform.select({
+            ios: { shadowOpacity: 0.05 },
+            web: { boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
+        })
     },
     ghost: {
         backgroundColor: 'transparent',
-        shadowOpacity: 0,
+        ...Platform.select({
+            ios: { shadowOpacity: 0 },
+            web: { boxShadow: 'none' }
+        }),
         elevation: 0,
     },
     disabled: {

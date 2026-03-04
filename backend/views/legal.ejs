@@ -1,0 +1,111 @@
+<div class="max-w-4xl mx-auto px-4 py-20">
+  <div class="text-center mb-16">
+    <h1 class="text-4xl md:text-5xl font-bold mb-4">Legal & Privacy</h1>
+    <p class="text-xl text-gray-400">Our Terms of Service and Privacy Policy</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex justify-center gap-4 mb-12">
+    <button
+      onclick="showTab('terms')"
+      id="btn-terms"
+      class="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-full font-bold transition"
+    >
+      Terms of Service
+    </button>
+    <button
+      onclick="showTab('privacy')"
+      id="btn-privacy"
+      class="bg-black/40 hover:bg-black/60 text-gray-300 border border-white/10 px-8 py-3 rounded-full font-bold transition"
+    >
+      Privacy Policy
+    </button>
+  </div>
+
+  <!-- Terms -->
+  <div id="terms" class="glass-card p-10 rounded-3xl mb-12">
+    <h2 class="text-2xl font-bold mb-6 text-primary">Terms of Service</h2>
+    <div
+      class="prose prose-invert max-w-none text-gray-300 leading-relaxed space-y-4"
+    >
+      <p>
+        <strong>1. Acceptance of Terms</strong><br />By accessing and using
+        Interesta, you agree to comply with these Terms of Service.
+      </p>
+      <p>
+        <strong>2. User Conduct</strong><br />You agree not to use the service
+        for any illegal or unauthorized purpose. Harassment, hate speech, and
+        spam are strictly prohibited.
+      </p>
+      <p>
+        <strong>3. Content</strong><br />You retain ownership of the content you
+        post, but you grant Interesta a license to use, display, and distribute
+        it on the platform.
+      </p>
+      <p>
+        <strong>4. Termination</strong><br />We reserve the right to suspend or
+        terminate your account at any time for violations of these terms.
+      </p>
+      <p>
+        <strong>5. Disclaimer</strong><br />The service is provided "as is"
+        without warranties of any kind.
+      </p>
+    </div>
+  </div>
+
+  <!-- Privacy -->
+  <div id="privacy" class="glass-card p-10 rounded-3xl mb-12 hidden">
+    <h2 class="text-2xl font-bold mb-6 text-primary">Privacy Policy</h2>
+    <div
+      class="prose prose-invert max-w-none text-gray-300 leading-relaxed space-y-4"
+    >
+      <p>
+        <strong>1. Information We Collect</strong><br />We collect information
+        you provide directly (name, email, interests) and usage data (location,
+        interactions).
+      </p>
+      <p>
+        <strong>2. How We Use Information</strong><br />To provide, maintain,
+        and improve our services, including personalized recommendations and
+        safety features.
+      </p>
+      <p>
+        <strong>3. Sharing of Information</strong><br />We do not sell your
+        personal data. We may share anonymized data with partners for analytics.
+      </p>
+      <p>
+        <strong>4. Security</strong><br />We implement industry-standard
+        security measures to protect your data.
+      </p>
+      <p>
+        <strong>5. Your Rights</strong><br />You can access, update, or delete
+        your personal information at any time through the app settings.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function showTab(tab) {
+      const terms = document.getElementById("terms");
+      const privacy = document.getElementById("privacy");
+      const btnTerms = document.getElementById("btn-terms");
+      const btnPrivacy = document.getElementById("btn-privacy");
+
+      if (tab === "terms") {
+        terms.classList.remove("hidden");
+        privacy.classList.add("hidden");
+        btnTerms.classList.add("bg-primary", "text-white");
+        btnTerms.classList.remove("bg-black/40", "text-gray-300", "border");
+        btnPrivacy.classList.add("bg-black/40", "text-gray-300", "border");
+        btnPrivacy.classList.remove("bg-primary", "text-white");
+      } else {
+        terms.classList.add("hidden");
+        privacy.classList.remove("hidden");
+        btnPrivacy.classList.add("bg-primary", "text-white");
+        btnPrivacy.classList.remove("bg-black/40", "text-gray-300", "border");
+        btnTerms.classList.add("bg-black/40", "text-gray-300", "border");
+        btnTerms.classList.remove("bg-primary", "text-white");
+      }
+    }
+  </script>
+</div>

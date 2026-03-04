@@ -1,25 +1,28 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { upload } = require('../../config/cloudinaryConfig');
+const multer = require("multer");
+const { upload } = require("../../config/cloudinaryConfig");
+const uploadController = require("../controllers/uploadController");
+const AppError = require("../../utils/appError");
+
+const handleSingleImageUpload = (req, res, next) => {
+  upload.single("image")(req, res, (err) => {
+    if (!err) return next();
+
+    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+      return next(
+        new AppError(
+          "Image is too large. Please upload an image up to 8MB.",
+          413,
+        ),
+      );
+    }
+
+    return next(new AppError(err.message || "Image upload failed", 400));
+  });
+};
 
 // POST /api/upload
-// Uploads an image to Cloudinary and returns the URL
-router.post('/', upload.single('image'), (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
-        }
-
-        // req.file.path contains the secure Cloudinary URL
-        res.json({
-            success: true,
-            url: req.file.path,
-            public_id: req.file.filename
-        });
-    } catch (error) {
-        console.error('Upload Error:', error);
-        res.status(500).json({ message: 'Internal server error during upload' });
-    }
-});
+router.post("/", handleSingleImageUpload, uploadController.uploadImage);
 
 module.exports = router;

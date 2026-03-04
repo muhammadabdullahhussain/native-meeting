@@ -1,0 +1,4 @@
+Migration started...
+Connected to DB
+Found 0 users to update
+Migration completed successfully

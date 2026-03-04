@@ -9,6 +9,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../../theme/theme';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../api/authService';
 
 const PLANS = [
     { id: 'monthly', label: 'Monthly', price: '$3.99', perMonth: '$3.99', period: 'monthly', savings: null, popular: false },
@@ -41,9 +43,11 @@ const HIGHLIGHTS = [
 export default function Premium({ navigation }) {
     const insets = useSafeAreaInsets();
     const { showToast } = useToast();
+    const { updateUser } = useAuth();
     const safeTop = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : insets.top;
     const [selectedPlan, setSelectedPlan] = useState('yearly');
     const [showComparison, setShowComparison] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const plan = PLANS.find(p => p.id === selectedPlan);
 
     const handleSelectPlan = (id) => {
@@ -51,9 +55,30 @@ export default function Premium({ navigation }) {
         setSelectedPlan(id);
     };
 
-    const handleUpgrade = () => {
+    const handleUpgrade = async () => {
+        if (isProcessing) return;
+        
+        setIsProcessing(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        showToast('Coming Soon! 🚀', `Premium (${plan.label}) at ${plan.price} — payment integration coming soon. Thank you for your interest!`, 'info');
+        
+        try {
+            // Simulate payment processing delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Call backend API
+            await authService.upgradeToPremium();
+            
+            // Update local user context
+            updateUser({ isPremium: true });
+            
+            showToast('Welcome to Premium! 👑', `You are now a Premium member. Enjoy unlimited access!`, 'success');
+            navigation.goBack();
+        } catch (error) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            showToast('Error', error.message || 'Payment failed', 'error');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -178,10 +203,12 @@ export default function Premium({ navigation }) {
 
                 {/* UPGRADE CTA */}
                 <View style={s.ctaSection}>
-                    <TouchableOpacity style={s.ctaBtn} onPress={handleUpgrade} activeOpacity={0.9}>
+                    <TouchableOpacity style={s.ctaBtn} onPress={handleUpgrade} activeOpacity={0.9} disabled={isProcessing}>
                         <LinearGradient colors={['#7C3AED', '#A855F7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.ctaGrad}>
-                            <Text style={s.ctaText}>Upgrade to Premium · {plan.price}</Text>
-                            <Feather name="arrow-right" size={18} color="#FFF" style={{ marginLeft: 8 }} />
+                            <Text style={s.ctaText}>
+                                {isProcessing ? 'Processing Payment...' : `Upgrade to Premium · ${plan.price}`}
+                            </Text>
+                            {!isProcessing && <Feather name="arrow-right" size={18} color="#FFF" style={{ marginLeft: 8 }} />}
                         </LinearGradient>
                     </TouchableOpacity>
                     <Text style={s.ctaNote}>🔒 Secure payment · Cancel anytime · 7-day refund policy</Text>

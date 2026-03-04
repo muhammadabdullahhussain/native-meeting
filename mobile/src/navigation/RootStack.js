@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 // Auth screens
 import AuthStack from './AuthStack';
+import ForgotPassword from '../screens/auth/ForgotPassword';
 
 // Main app screens
 import MainTabs from './MainTabs';
@@ -17,7 +18,11 @@ import Premium from '../screens/main/Premium';
 import InterestManager from '../screens/main/InterestManager';
 import GroupChat from '../screens/main/GroupChat';
 import SafetyCenter from '../screens/main/SafetyCenter';
+import Invite from '../screens/main/Invite';
 import Splash from '../screens/Splash';
+import HelpCenter from '../screens/main/HelpCenter';
+import TermsOfService from '../screens/main/TermsOfService';
+import PrivacyPolicy from '../screens/main/PrivacyPolicy';
 
 const Stack = createNativeStackNavigator();
 
@@ -62,6 +67,11 @@ export default function RootStack() {
                         <Stack.Screen name="InterestManager" component={InterestManager} options={{ presentation: 'modal' }} />
                         <Stack.Screen name="GroupChat" component={GroupChat} />
                         <Stack.Screen name="SafetyCenter" component={SafetyCenter} options={{ presentation: 'modal' }} />
+                        <Stack.Screen name="Invite" component={Invite} options={{ presentation: 'modal' }} />
+                        <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ presentation: 'modal' }} />
+                        <Stack.Screen name="HelpCenter" component={HelpCenter} />
+                        <Stack.Screen name="TermsOfService" component={TermsOfService} />
+                        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
                     </>
                 )}
             </Stack.Navigator>

@@ -9,10 +9,13 @@ import Connections from '../screens/main/Connections';
 import Notifications from '../screens/main/Notifications';
 import Profile from '../screens/main/Profile';
 
+import { useNotifications } from '../context/NotificationContext';
+
 const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
     const insets = useSafeAreaInsets();
+    const { unreadCount } = useNotifications();
 
     return (
         <Tab.Navigator
@@ -52,7 +55,19 @@ export default function MainTabs() {
         >
             <Tab.Screen name="Discover" component={Discover} options={{ title: 'Explore' }} />
             <Tab.Screen name="Connections" component={Connections} options={{ title: 'Messages' }} />
-            <Tab.Screen name="Notifications" component={Notifications} />
+            <Tab.Screen
+                name="Notifications"
+                component={Notifications}
+                options={{
+                    tabBarBadge: unreadCount > 0 ? unreadCount : null,
+                    tabBarBadgeStyle: {
+                        backgroundColor: '#EF4444',
+                        color: '#FFF',
+                        fontSize: 10,
+                        fontFamily: theme.typography.fontFamily.bold,
+                    }
+                }}
+            />
             <Tab.Screen name="Profile" component={Profile} />
         </Tab.Navigator>
     );

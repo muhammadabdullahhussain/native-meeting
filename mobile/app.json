@@ -2,6 +2,7 @@
   "expo": {
     "name": "meeting-app",
     "slug": "meeting-app",
+    "scheme": "interesta",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

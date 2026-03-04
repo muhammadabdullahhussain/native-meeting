@@ -88,27 +88,33 @@ export const Toast = () => {
                     style={[
                         s.toastRoot,
                         {
-                            top: insets.top + 12,
+                            top: insets.top + 16,
                             opacity,
                             transform: [{ translateY }]
                         }
                     ]}
                 >
-                    <BlurView intensity={Platform.OS === 'ios' ? 80 : 100} tint="dark" style={s.toastBlur}>
-                        <LinearGradient colors={getColors()} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.toastGrad} />
-                        <View style={s.toastContent}>
-                            <View style={s.toastIconBox}>
-                                <Feather name={getIcon()} size={18} color="#FFF" />
+                    <View style={s.toastWrapper}>
+                        {Platform.OS === 'ios' ? (
+                            <BlurView intensity={70} tint="light" style={StyleSheet.absoluteFill} />
+                        ) : (
+                            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.95)' }]} />
+                        )}
+                        <View style={s.toastInner}>
+                            <View style={[s.toastIconBox, { backgroundColor: getColors()[0] + '20' }]}>
+                                <Feather name={getIcon()} size={20} color={getColors()[0]} />
                             </View>
-                            <View style={{ flex: 1 }}>
+                            <View style={s.toastTextContainer}>
                                 <Text style={s.toastTitle}>{toast.title}</Text>
-                                {toast.sub && <Text style={s.toastSub}>{toast.sub}</Text>}
+                                {toast.sub && <Text style={s.toastSub} numberOfLines={2}>{toast.sub}</Text>}
                             </View>
-                            <TouchableOpacity onPress={hideToast} style={s.toastClose}>
-                                <Feather name="x" size={14} color="rgba(255,255,255,0.5)" />
+                            <TouchableOpacity onPress={hideToast} style={s.toastClose} activeOpacity={0.6}>
+                                <Feather name="x" size={16} color="#94A3B8" />
                             </TouchableOpacity>
                         </View>
-                    </BlurView>
+                        {/* Subtle left border accent */}
+                        <View style={[s.toastAccentStyle, { backgroundColor: getColors()[0] }]} />
+                    </View>
                 </Animated.View>
             )}
 
@@ -160,44 +166,71 @@ const s = StyleSheet.create({
         left: 20,
         right: 20,
         zIndex: 9999,
-        borderRadius: 20,
+        alignItems: 'center',
+    },
+    toastWrapper: {
+        width: '100%',
+        maxWidth: 400,
+        borderRadius: 24,
         overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.6)',
         ...Platform.select({
             ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.3,
-                shadowRadius: 20,
+                shadowColor: '#0F172A',
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.15,
+                shadowRadius: 24,
             },
             android: {
-                elevation: 10,
+                elevation: 12,
             },
             web: {
-                boxShadow: '0px 10px 20px rgba(0,0,0,0.3)',
+                boxShadow: '0px 12px 24px rgba(15,23,42,0.15)',
             }
         }),
     },
-    toastBlur: { padding: 2 },
-    toastGrad: { ...StyleSheet.absoluteFillObject, opacity: 0.15 },
-    toastContent: {
+    toastInner: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
-        backgroundColor: 'rgba(15, 23, 42, 0.85)',
-        borderRadius: 18,
+        padding: 14,
+        paddingLeft: 20,
+    },
+    toastAccentStyle: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 4,
     },
     toastIconBox: {
-        width: 32,
-        height: 32,
-        borderRadius: 10,
-        backgroundColor: 'rgba(255,255,255,0.1)',
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 14,
     },
-    toastTitle: { color: '#FFF', fontSize: 14, fontWeight: '700' },
-    toastSub: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
-    toastClose: { padding: 4 },
+    toastTextContainer: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    toastTitle: {
+        color: '#0F172A',
+        fontSize: 15,
+        fontFamily: 'Inter_700Bold', /* Assuming we are keeping with the theme font weights, alternatively fontWeight: 'bold' */
+        fontWeight: '700',
+        marginBottom: 2,
+    },
+    toastSub: {
+        color: '#64748B',
+        fontSize: 13,
+        lineHeight: 18,
+    },
+    toastClose: {
+        padding: 8,
+        marginLeft: 8,
+    },
 
     // MODAL
     modalOverlay: {
