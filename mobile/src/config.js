@@ -14,7 +14,7 @@ if (debuggerHost) {
     DYNAMIC_IP = debuggerHost.split(':')[0];
 }
 
-const PROD_URL = 'https://native-meeting.onrender.com'; // Placeholder, user needs to update this
+const PROD_URL = 'https://interesta-backend.onrender.com';
 
 export const LOCAL_IP = DYNAMIC_IP;
 
