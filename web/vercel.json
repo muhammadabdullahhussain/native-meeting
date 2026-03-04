@@ -1,0 +1,9 @@
+{
+    "version": 2,
+    "public": true,
+    "name": "interesta-web",
+    "framework": "nextjs",
+    "buildCommand": "npm run build",
+    "installCommand": "npm install",
+    "outputDirectory": ".next"
+}

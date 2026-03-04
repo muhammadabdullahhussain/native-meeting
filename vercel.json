@@ -1,15 +1,10 @@
 {
     "version": 2,
-    "builds": [
+    "redirects": [
         {
-            "src": "backend/server.js",
-            "use": "@vercel/node"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "backend/server.js"
+            "source": "/(.*)",
+            "destination": "https://interesta-web.vercel.app/$1",
+            "permanent": true
         }
     ]
 }
