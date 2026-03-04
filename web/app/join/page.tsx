@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, UserPlus, Gift } from "lucide-react";
 
-export default function Join() {
+export const dynamic = "force-dynamic";
+
+function JoinInner() {
   const searchParams = useSearchParams();
   const code = searchParams.get("code") || searchParams.get("ref");
   const [inviterName, setInviterName] = useState("A friend");
@@ -130,5 +132,19 @@ export default function Join() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function Join() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center text-gray-400">
+          Loading…
+        </div>
+      }
+    >
+      <JoinInner />
+    </Suspense>
   );
 }
