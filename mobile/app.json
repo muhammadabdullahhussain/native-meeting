@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "BondUs",
-    "slug": "bondus",
+    "slug": "meeting-app",
     "scheme": "bondus",
     "version": "1.0.0",
     "orientation": "portrait",
