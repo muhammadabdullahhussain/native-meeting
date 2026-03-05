@@ -49,7 +49,13 @@ app.use("/api", limiter);
 app.use(express.json({ limit: "10kb" }));
 
 app.get("/healthz", (req, res) => {
-  res.status(200).json({ status: "OK", timestamp: new Date() });
+  const mongoose = require("mongoose");
+  res.status(200).json({
+    status: "OK",
+    database: mongoose.connection.readyState === 1 ? "Connected" : "Disconnected",
+    readyState: mongoose.connection.readyState,
+    timestamp: new Date()
+  });
 });
 
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
