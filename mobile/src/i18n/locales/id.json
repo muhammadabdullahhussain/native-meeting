@@ -401,5 +401,42 @@
       "evenings": "Malam hari",
       "mornings": "Pagi hari"
     }
+  },
+  "chat_room": {
+    "typing": "sedang mengetik...",
+    "active_now": "● Aktif sekarang",
+    "tap_view_profile": "Ketuk untuk melihat profil",
+    "voice_call": "Panggilan suara",
+    "video_call": "Panggilan video",
+    "coming_soon": "Segera hadir!",
+    "options": "Opsi",
+    "view_profile": "Lihat profil",
+    "mute_notifications": "Bisukan notifikasi",
+    "notifications_muted": "Dibisukan",
+    "notifications_muted_msg": "Notifikasi telah dibisukan.",
+    "report_user": "Laporkan pengguna",
+    "block_user": "Blokir pengguna 🚫",
+    "block_user_msg": "Apakah Anda yakin ingin memblokir {{name}}?",
+    "blocked_msg": "{{name}} telah dibatasi.",
+    "blocked_title": "Pengguna diblokir",
+    "cancel": "Batal",
+    "message_placeholder": "Pesan...",
+    "voice_message": "Pesan suara",
+    "camera": "Kamera",
+    "replying": "Membalas: {{text}}"
+  },
+  "user_profile": {
+    "connect": "Terhubung",
+    "connected": "Terhubung ✓",
+    "pending": "Permintaan terkirim",
+    "message": "Pesan",
+    "block": "Blokir",
+    "report": "Laporkan",
+    "unblock": "Buka blokir",
+    "interests": "Minat",
+    "about": "Tentang",
+    "no_bio": "Belum ada bio.",
+    "looking_for": "Mencari",
+    "details": "Detail"
   }
 }

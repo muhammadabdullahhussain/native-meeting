@@ -401,5 +401,42 @@
       "evenings": "المساء",
       "mornings": "الصباح"
     }
+  },
+  "chat_room": {
+    "typing": "يكتب...",
+    "active_now": "● نشط الآن",
+    "tap_view_profile": "انقر لعرض الملف الشخصي",
+    "voice_call": "مكالمة صوتية",
+    "video_call": "مكالمة فيديو",
+    "coming_soon": "قريباً!",
+    "options": "خيارات",
+    "view_profile": "عرض الملف الشخصي",
+    "mute_notifications": "كتم الإشعارات",
+    "notifications_muted": "مكتوم",
+    "notifications_muted_msg": "تم كتم الإشعارات.",
+    "report_user": "الإبلاغ عن مستخدم",
+    "block_user": "حظر المستخدم 🚫",
+    "block_user_msg": "هل أنت متأكد أنك تريد حظر {{name}}؟",
+    "blocked_msg": "تم تقييد {{name}}.",
+    "blocked_title": "تم حظر المستخدم",
+    "cancel": "إلغاء",
+    "message_placeholder": "رسالة...",
+    "voice_message": "رسالة صوتية",
+    "camera": "الكاميرا",
+    "replying": "رداً على: {{text}}"
+  },
+  "user_profile": {
+    "connect": "تواصل",
+    "connected": "متصل ✓",
+    "pending": "تم إرسال الطلب",
+    "message": "رسالة",
+    "block": "حظر",
+    "report": "إبلاغ",
+    "unblock": "إلغاء الحظر",
+    "interests": "الاهتمامات",
+    "about": "حول",
+    "no_bio": "لا توجد سيرة ذاتية بعد.",
+    "looking_for": "يبحث عن",
+    "details": "تفاصيل"
   }
 }

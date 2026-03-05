@@ -490,5 +490,42 @@
       "evenings": "Вечера",
       "mornings": "Утро"
     }
+  },
+  "chat_room": {
+    "typing": "печатает...",
+    "active_now": "● Сейчас активен",
+    "tap_view_profile": "Нажмите для просмотра профиля",
+    "voice_call": "Голосовой звонок",
+    "video_call": "Видеозвонок",
+    "coming_soon": "Скоро!",
+    "options": "Опции",
+    "view_profile": "Просмотреть профиль",
+    "mute_notifications": "Отключить уведомления",
+    "notifications_muted": "Отключено",
+    "notifications_muted_msg": "Уведомления отключены.",
+    "report_user": "Пожаловаться на пользователя",
+    "block_user": "Заблокировать пользователя 🚫",
+    "block_user_msg": "Вы уверены, что хотите заблокировать {{name}}?",
+    "blocked_msg": "{{name}} был ограничен.",
+    "blocked_title": "Пользователь заблокирован",
+    "cancel": "Отмена",
+    "message_placeholder": "Сообщение...",
+    "voice_message": "Голосовое сообщение",
+    "camera": "Камера",
+    "replying": "Ответ на: {{text}}"
+  },
+  "user_profile": {
+    "connect": "Подключиться",
+    "connected": "Подключён ✓",
+    "pending": "Запрос отправлен",
+    "message": "Сообщение",
+    "block": "Заблокировать",
+    "report": "Пожаловаться",
+    "unblock": "Разблокировать",
+    "interests": "Интересы",
+    "about": "О себе",
+    "no_bio": "Пока нет биографии.",
+    "looking_for": "Ищет",
+    "details": "Подробности"
   }
 }

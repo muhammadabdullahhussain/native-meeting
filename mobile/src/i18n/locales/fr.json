@@ -401,5 +401,42 @@
       "evenings": "Soirs",
       "mornings": "Matins"
     }
+  },
+  "chat_room": {
+    "typing": "en train de taper...",
+    "active_now": "● Actif maintenant",
+    "tap_view_profile": "Appuyer pour voir le profil",
+    "voice_call": "Appel vocal",
+    "video_call": "Appel vidéo",
+    "coming_soon": "Bientôt disponible!",
+    "options": "Options",
+    "view_profile": "Voir le profil",
+    "mute_notifications": "Couper les notifications",
+    "notifications_muted": "Muet",
+    "notifications_muted_msg": "Les notifications ont été coupées.",
+    "report_user": "Signaler l'utilisateur",
+    "block_user": "Bloquer l'utilisateur 🚫",
+    "block_user_msg": "Voulez-vous vraiment bloquer {{name}}?",
+    "blocked_msg": "{{name}} a été restreint.",
+    "blocked_title": "Utilisateur bloqué",
+    "cancel": "Annuler",
+    "message_placeholder": "Message...",
+    "voice_message": "Message vocal",
+    "camera": "Appareil photo",
+    "replying": "Répondre à: {{text}}"
+  },
+  "user_profile": {
+    "connect": "Connecter",
+    "connected": "Connecté ✓",
+    "pending": "Demande envoyée",
+    "message": "Message",
+    "block": "Bloquer",
+    "report": "Signaler",
+    "unblock": "Débloquer",
+    "interests": "Intérêts",
+    "about": "À propos",
+    "no_bio": "Pas encore de bio.",
+    "looking_for": "Cherche",
+    "details": "Détails"
   }
 }

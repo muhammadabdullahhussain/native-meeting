@@ -490,5 +490,42 @@
       "evenings": "شامیں",
       "mornings": "صبحیں"
     }
+  },
+  "chat_room": {
+    "typing": "ٹائپ کر رہا ہے...",
+    "active_now": "● ابھی فعال",
+    "tap_view_profile": "پروفائل دیکھنے کے لیے ٹیپ کریں",
+    "voice_call": "وائس کال",
+    "video_call": "ویڈیو کال",
+    "coming_soon": "جلد آ رہا ہے!",
+    "options": "آپشنز",
+    "view_profile": "پروفائل دیکھیں",
+    "mute_notifications": "نوٹیفیکیشن خاموش کریں",
+    "notifications_muted": "خاموش",
+    "notifications_muted_msg": "نوٹیفیکیشن خاموش کر دی گئی ہیں۔",
+    "report_user": "صارف کی رپورٹ کریں",
+    "block_user": "صارف کو بلاک کریں 🚫",
+    "block_user_msg": "کیا آپ واقعی {{name}} کو بلاک کرنا چاہتے ہیں؟",
+    "blocked_msg": "{{name}} کو محدود کر دیا گیا ہے۔",
+    "blocked_title": "صارف بلاک",
+    "cancel": "منسوخ",
+    "message_placeholder": "پیغام...",
+    "voice_message": "وائس میسیج",
+    "camera": "کیمرہ",
+    "replying": "جواب دے رہے ہیں: {{text}}"
+  },
+  "user_profile": {
+    "connect": "جڑیں",
+    "connected": "جڑ گئے ✓",
+    "pending": "درخواست بھیج دی",
+    "message": "پیغام",
+    "block": "بلاک",
+    "report": "رپورٹ",
+    "unblock": "ان بلاک",
+    "interests": "دلچسپیاں",
+    "about": "بارے میں",
+    "no_bio": "ابھی تک کوئی بائیو نہیں۔",
+    "looking_for": "تلاش کر رہے ہیں",
+    "details": "تفصیلات"
   }
 }

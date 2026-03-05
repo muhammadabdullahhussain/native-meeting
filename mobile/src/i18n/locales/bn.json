@@ -401,5 +401,42 @@
       "evenings": "সন্ধ্যা",
       "mornings": "সকাল"
     }
+  },
+  "chat_room": {
+    "typing": "টাইপ করছে...",
+    "active_now": "● এখন সক্রিয়",
+    "tap_view_profile": "প্রোফাইল দেখতে ট্যাপ করুন",
+    "voice_call": "ভয়েস কল",
+    "video_call": "ভিডিও কল",
+    "coming_soon": "শীঘ্রই আসছে!",
+    "options": "বিকল্প",
+    "view_profile": "প্রোফাইল দেখুন",
+    "mute_notifications": "বিজ্ঞপ্তি নিঃশব্দ করুন",
+    "notifications_muted": "নিঃশব্দ",
+    "notifications_muted_msg": "বিজ্ঞপ্তি নিঃশব্দ করা হয়েছে।",
+    "report_user": "ব্যবহারকারীকে রিপোর্ট করুন",
+    "block_user": "ব্যবহারকারীকে ব্লক করুন 🚫",
+    "block_user_msg": "আপনি কি সত্যিই {{name}} কে ব্লক করতে চান?",
+    "blocked_msg": "{{name}} কে সীমাবদ্ধ করা হয়েছে।",
+    "blocked_title": "ব্যবহারকারী ব্লক",
+    "cancel": "বাতিল",
+    "message_placeholder": "বার্তা...",
+    "voice_message": "ভয়েস বার্তা",
+    "camera": "ক্যামেরা",
+    "replying": "উত্তর দিচ্ছে: {{text}}"
+  },
+  "user_profile": {
+    "connect": "সংযুক্ত হন",
+    "connected": "সংযুক্ত ✓",
+    "pending": "অনুরোধ পাঠানো হয়েছে",
+    "message": "বার্তা",
+    "block": "ব্লক",
+    "report": "রিপোর্ট",
+    "unblock": "আনব্লক",
+    "interests": "আগ্রহ",
+    "about": "সম্পর্কে",
+    "no_bio": "এখনও কোনো বায়ো নেই।",
+    "looking_for": "খুচজছি",
+    "details": "বিবরণ"
   }
 }

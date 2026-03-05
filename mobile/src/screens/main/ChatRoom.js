@@ -4,6 +4,7 @@ import {
     FlatList, KeyboardAvoidingView, Platform, Image, Modal, Alert
 } from 'react-native';
 import { Keyboard } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -36,6 +37,7 @@ export default function ChatRoom({ route, navigation }) {
     const { user, chatData } = route.params || {};
     const insets = useSafeAreaInsets();
     const { confirmAction, showToast } = useToast();
+    const { t } = useTranslation();
 
     const { user: me } = useAuth();
     const { on, emit, emitWithAck, socket } = useSocket();
@@ -392,43 +394,43 @@ export default function ChatRoom({ route, navigation }) {
                                 ]}
                                 numberOfLines={1}
                             >
-                                {isTyping ? '✍️ typing...' : userStatus === 'online' ? '🟢 Online' : '⚫ Offline'}
+                                {isTyping ? t('chat_room.typing') : userStatus === 'online' ? t('chat_room.active_now') : t('chat_room.tap_view_profile')}
                             </Text>
                         </View>
                     </TouchableOpacity>
                 </View>
                 <View style={s.headerRight}>
-                    <TouchableOpacity style={s.headerIconBtn} onPress={() => showToast('Voice Call', 'Coming soon!', 'info')} activeOpacity={0.8}>
+                    <TouchableOpacity style={s.headerIconBtn} onPress={() => showToast(t('chat_room.voice_call'), t('chat_room.coming_soon'), 'info')} activeOpacity={0.8}>
                         <Feather name="phone" size={18} color="#FFF" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={s.headerIconBtn} onPress={() => showToast('Video Call', 'Coming soon!', 'info')} activeOpacity={0.8}>
+                    <TouchableOpacity style={s.headerIconBtn} onPress={() => showToast(t('chat_room.video_call'), t('chat_room.coming_soon'), 'info')} activeOpacity={0.8}>
                         <Feather name="video" size={18} color="#FFF" />
                     </TouchableOpacity>
                     <TouchableOpacity style={s.headerIconBtn} activeOpacity={0.8}
-                        onPress={() => Alert.alert('Options', user?.name, [
-                            { text: 'View Profile', onPress: () => navigation.navigate('UserProfile', { user }) },
-                            { text: 'Mute Notifications', onPress: () => showToast('Muted', 'Notifications have been muted.', 'success') },
-                            { text: 'Report User', style: 'destructive', onPress: () => setReportVisible(true) },
+                        onPress={() => Alert.alert(t('chat_room.options'), user?.name, [
+                            { text: t('chat_room.view_profile'), onPress: () => navigation.navigate('UserProfile', { user }) },
+                            { text: t('chat_room.mute_notifications'), onPress: () => showToast(t('chat_room.notifications_muted'), t('chat_room.notifications_muted_msg'), 'success') },
+                            { text: t('chat_room.report_user'), style: 'destructive', onPress: () => setReportVisible(true) },
                             {
-                                text: 'Block User', style: 'destructive', onPress: () => {
+                                text: t('chat_room.block_user'), style: 'destructive', onPress: () => {
                                     confirmAction({
-                                        title: 'Block User? 🚫',
-                                        message: `Are you sure you want to block ${user.name}? They won't be able to message you and you will no longer see each other.`,
+                                        title: t('chat_room.block_user'),
+                                        message: t('chat_room.block_user_msg', { name: user.name }),
                                         onConfirm: async () => {
                                             try {
                                                 await authService.blockUser(user._id);
-                                                showToast('User Blocked', `${user.name} has been restricted.`, 'success');
+                                                showToast(t('chat_room.blocked_title'), t('chat_room.blocked_msg', { name: user.name }), 'success');
                                                 navigation.goBack();
                                             } catch (err) {
-                                                showToast('Error', err.message || 'Failed to block user', 'error');
+                                                showToast(t('common.error'), err.message || 'Failed to block user', 'error');
                                             }
                                         },
-                                        confirmText: 'Block',
+                                        confirmText: t('chat_room.block_user'),
                                         confirmStyle: 'destructive'
                                     });
                                 }
                             },
-                            { text: 'Cancel', style: 'cancel' },
+                            { text: t('chat_room.cancel'), style: 'cancel' },
                         ])}
                     >
                         <Feather name="more-vertical" size={18} color="#FFF" />
@@ -502,12 +504,12 @@ export default function ChatRoom({ route, navigation }) {
                             style={s.input}
                             value={inputText}
                             onChangeText={handleType}
-                            placeholder="Message..."
+                            placeholder={t('chat_room.message_placeholder')}
                             placeholderTextColor="#94A3B8"
                             multiline
                         />
                         {inputText.trim() === '' && (
-                            <TouchableOpacity style={s.cameraBtn} onPress={() => showToast('Camera', 'Coming soon!', 'info')}>
+                            <TouchableOpacity style={s.cameraBtn} onPress={() => showToast(t('chat_room.camera'), t('chat_room.coming_soon'), 'info')}>
                                 <Feather name="camera" size={18} color="#94A3B8" />
                             </TouchableOpacity>
                         )}
@@ -519,7 +521,7 @@ export default function ChatRoom({ route, navigation }) {
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity style={s.voiceBtn} activeOpacity={0.85}
-                                onPress={() => showToast('Voice Message', 'Coming soon!', 'info')}
+                                onPress={() => showToast(t('chat_room.voice_message'), t('chat_room.coming_soon'), 'info')}
                             >
                                 <Feather name="mic" size={20} color="#6366F1" />
                             </TouchableOpacity>

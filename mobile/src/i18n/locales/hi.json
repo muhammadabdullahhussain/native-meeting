@@ -401,5 +401,42 @@
       "evenings": "शाम",
       "mornings": "सुबह"
     }
+  },
+  "chat_room": {
+    "typing": "टाइप कर रहा है...",
+    "active_now": "● अभी सक्रिय",
+    "tap_view_profile": "प्रोफ़ाइल देखने के लिए टैप करें",
+    "voice_call": "वॉयस कॉल",
+    "video_call": "वीडियो कॉल",
+    "coming_soon": "जल्द आ रहा है!",
+    "options": "विकल्प",
+    "view_profile": "प्रोफ़ाइल देखें",
+    "mute_notifications": "सूचनाएं म्यूट करें",
+    "notifications_muted": "म्यूट",
+    "notifications_muted_msg": "सूचनाएं म्यूट कर दी गई हैं।",
+    "report_user": "उपयोगकर्ता की रिपोर्ट करें",
+    "block_user": "उपयोगकर्ता को ब्लॉक करें 🚫",
+    "block_user_msg": "क्या आप वाकई {{name}} को ब्लॉक करना चाहते हैं?",
+    "blocked_msg": "{{name}} को प्रतिबंधित कर दिया गया है।",
+    "blocked_title": "उपयोगकर्ता ब्लॉक",
+    "cancel": "रद्द करें",
+    "message_placeholder": "संदेश...",
+    "voice_message": "वॉयस संदेश",
+    "camera": "कैमरा",
+    "replying": "जवाब दे रहे हैं: {{text}}"
+  },
+  "user_profile": {
+    "connect": "जुड़ें",
+    "connected": "जुड़ गए ✓",
+    "pending": "अनुरोध भेजा गया",
+    "message": "संदेश",
+    "block": "ब्लॉक",
+    "report": "रिपोर्ट",
+    "unblock": "अनब्लॉक",
+    "interests": "रुचियाँ",
+    "about": "के बारे में",
+    "no_bio": "अभी तक कोई बायो नहीं।",
+    "looking_for": "खोज रहे हैं",
+    "details": "विवरण"
   }
 }
