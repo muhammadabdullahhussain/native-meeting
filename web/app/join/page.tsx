@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -190,16 +189,18 @@ function JoinInner() {
         {inviter && (
           <div className="rounded-2xl p-3 sm:p-5 mb-6 sm:mb-8 bg-white/5 border border-white/10 text-left">
             <div className="flex items-center gap-3">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={
                   inviter.avatar ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(inviter.name)}&background=6366F1&color=fff`
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(inviter.name)}&background=6366F1&color=fff&size=112`
                 }
                 alt={inviter.name}
-                width={56}
-                height={56}
-                sizes="56px"
                 className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-white/10 flex-shrink-0"
+                onError={(e) => {
+                  const t = e.target as HTMLImageElement;
+                  t.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(inviter.name)}&background=6366F1&color=fff&size=112`;
+                }}
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">

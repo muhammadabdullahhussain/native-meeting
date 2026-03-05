@@ -49,24 +49,24 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-bg border-t border-white/10 py-14 relative overflow-hidden">
+    <footer className="bg-bg border-t border-white/10 py-10 sm:py-14 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent pointer-events-none" />
       <div className="container mx-auto px-4 relative z-10">
-        <div className="mb-10 rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div className="mb-8 sm:mb-10 rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-8 flex flex-col gap-5">
           <div>
             <p className="text-sm text-primary-300 mb-2 inline-flex items-center gap-2">
               <Sparkles size={14} />
               Premium Community Access
             </p>
-            <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">
               Ready to meet your tribe nearby?
             </h3>
-            <p className="text-gray-400">
+            <p className="text-gray-400 text-sm sm:text-base">
               Join verified people, discover local communities, and build real
               connections.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href="/pricing"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold transition-colors"
@@ -84,7 +84,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10">
           <div className="md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4 group">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
@@ -159,7 +159,7 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="border-t border-white/10 mt-12 pt-8 text-center md:text-left flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 gap-4">
+        <div className="border-t border-white/10 mt-10 sm:mt-12 pt-6 sm:pt-8 text-center flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 gap-3 sm:gap-4">
           <div>
             <p>&copy; {currentYear} BondUs Inc. All rights reserved.</p>
             <p className="text-xs text-gray-600 mt-1">
