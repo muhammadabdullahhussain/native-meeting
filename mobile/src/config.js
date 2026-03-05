@@ -14,7 +14,7 @@ if (debuggerHost) {
     DYNAMIC_IP = debuggerHost.split(':')[0];
 }
 
-const PROD_URL = 'https://bondus-backend.onrender.com';
+const PROD_URL = 'https://interesta-backend.onrender.com';
 
 export const LOCAL_IP = DYNAMIC_IP;
 
