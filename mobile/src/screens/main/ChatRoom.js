@@ -50,9 +50,27 @@ export default function ChatRoom({ route, navigation }) {
     const [reactions, setReactions] = useState({});
     const [reactionsFor, setReactionsFor] = useState(null);
     const [showAttach, setShowAttach] = useState(false);
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
     const flatListRef = useRef(null);
     const typingTimeoutRef = useRef(null);
+
+    // Keyboard listeners for stable input positioning
+    useEffect(() => {
+        const showSubscription = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            () => setIsKeyboardVisible(true)
+        );
+        const hideSubscription = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => setIsKeyboardVisible(false)
+        );
+
+        return () => {
+            showSubscription.remove();
+            hideSubscription.remove();
+        };
+    }, []);
 
     // Fetch message history
     useEffect(() => {
@@ -421,7 +439,7 @@ export default function ChatRoom({ route, navigation }) {
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
 
@@ -469,7 +487,14 @@ export default function ChatRoom({ route, navigation }) {
                 )}
 
                 {/* Input */}
-                <View style={[s.inputRow, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+                <View style={[
+                    s.inputRow,
+                    {
+                        paddingBottom: isKeyboardVisible
+                            ? 4
+                            : Math.max(insets.bottom, 12)
+                    }
+                ]}>
                     <TouchableOpacity style={s.attachBtn} onPress={() => setShowAttach(true)} activeOpacity={0.8}>
                         <Feather name="plus" size={22} color="#6366F1" />
                     </TouchableOpacity>
