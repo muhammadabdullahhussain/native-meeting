@@ -431,7 +431,7 @@ export default function ChatRoom({ route, navigation }) {
                     data={messages}
                     keyExtractor={(item, i) => getSafeId(item, `msg-${i}`)}
                     renderItem={renderMessage}
-                    contentContainerStyle={s.msgList}
+                    contentContainerStyle={[s.msgList, { flexGrow: 1, justifyContent: 'flex-end' }]}
                     showsVerticalScrollIndicator={false}
                     initialNumToRender={15}
                     maxToRenderPerBatch={20}
@@ -585,7 +585,7 @@ const s = StyleSheet.create({
     headerIconBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)', justifyContent: 'center', alignItems: 'center' },
 
     // MESSAGES
-    msgList: { padding: 16, paddingBottom: 32 },
+    msgList: { padding: 16, paddingBottom: 8 },
     dateDivider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24, paddingHorizontal: 20 },
     dateLine: { flex: 1, height: 1, backgroundColor: '#E2E8F0' },
     dateText: { fontSize: 12, color: '#94A3B8', fontFamily: theme.typography.fontFamily.bold, marginHorizontal: 12, textTransform: 'uppercase', letterSpacing: 1 },
