@@ -82,7 +82,7 @@ export default function ChatRoom({ route, navigation }) {
                             messageIds: unreadIds,
                             senderId: targetId,
                             readerId: me?._id
-                        }).catch(() => {});
+                        }).catch(() => { });
                     }
                 }
             } catch (err) {
@@ -162,7 +162,7 @@ export default function ChatRoom({ route, navigation }) {
             Keyboard?.dismiss();
             offMsg(); offRead(); offTyping(); offPresence();
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-            emitWithAck('typing', { receiverId: user?._id || user?.id, senderId: me?._id, senderName: me?.name, senderAvatar: me?.avatar, isTyping: false, groupId: null }).catch(() => {});
+            emitWithAck('typing', { receiverId: user?._id || user?.id, senderId: me?._id, senderName: me?.name, senderAvatar: me?.avatar, isTyping: false, groupId: null }).catch(() => { });
         };
     }, [on, emit, user, me, socket]);
 
@@ -197,7 +197,7 @@ export default function ChatRoom({ route, navigation }) {
             senderAvatar: me?.avatar,
             isTyping: false,
             groupId: null
-        }).catch(() => {});
+        }).catch(() => { });
 
         try {
             const resp = await authService.sendMessage({
@@ -229,7 +229,7 @@ export default function ChatRoom({ route, navigation }) {
             senderAvatar: me?.avatar,
             isTyping: isCurrentlyTyping,
             groupId: null
-        }).catch(() => {});
+        }).catch(() => { });
 
         // Auto-clear typing indicator after pause
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -242,7 +242,7 @@ export default function ChatRoom({ route, navigation }) {
                     senderAvatar: me?.avatar,
                     isTyping: false,
                     groupId: null
-                }).catch(() => {});
+                }).catch(() => { });
             }, 3000);
         }
     };

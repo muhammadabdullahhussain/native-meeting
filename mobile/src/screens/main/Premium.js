@@ -43,7 +43,7 @@ const HIGHLIGHTS = [
 export default function Premium({ navigation }) {
     const insets = useSafeAreaInsets();
     const { showToast } = useToast();
-    const { updateUser } = useAuth();
+    const { user, updateUser } = useAuth();
     const safeTop = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : insets.top;
     const [selectedPlan, setSelectedPlan] = useState('yearly');
     const [showComparison, setShowComparison] = useState(false);
@@ -57,20 +57,20 @@ export default function Premium({ navigation }) {
 
     const handleUpgrade = async () => {
         if (isProcessing) return;
-        
+
         setIsProcessing(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
+
         try {
             // Simulate payment processing delay
             await new Promise(resolve => setTimeout(resolve, 1500));
-            
+
             // Call backend API
             await authService.upgradeToPremium();
-            
+
             // Update local user context
             updateUser({ isPremium: true });
-            
+
             showToast('Welcome to Premium! 👑', `You are now a Premium member. Enjoy unlimited access!`, 'success');
             navigation.goBack();
         } catch (error) {
@@ -99,8 +99,12 @@ export default function Premium({ navigation }) {
                     <View style={s.crownWrap}>
                         <Text style={{ fontSize: 52 }}>👑</Text>
                     </View>
-                    <Text style={s.heroTitle}>Go Premium</Text>
-                    <Text style={s.heroSub}>Unlock the full Weezy experience — no limits, no restrictions, pure connection.</Text>
+                    <Text style={s.heroTitle}>{user?.isPremium ? 'Premium Active' : 'Go Premium'}</Text>
+                    <Text style={s.heroSub}>
+                        {user?.isPremium
+                            ? "You're enjoying the elite Interesta experience with no limits. Thank you for being a part of our premium community!"
+                            : "Unlock the full Interesta experience — no limits, no restrictions, pure connection."}
+                    </Text>
 
                     {/* Floating stats */}
                     <View style={s.statsRow}>
@@ -203,12 +207,21 @@ export default function Premium({ navigation }) {
 
                 {/* UPGRADE CTA */}
                 <View style={s.ctaSection}>
-                    <TouchableOpacity style={s.ctaBtn} onPress={handleUpgrade} activeOpacity={0.9} disabled={isProcessing}>
+                    <TouchableOpacity
+                        style={[s.ctaBtn, user?.isPremium && { opacity: 0.8 }]}
+                        onPress={user?.isPremium ? null : handleUpgrade}
+                        activeOpacity={0.9}
+                        disabled={isProcessing || user?.isPremium}
+                    >
                         <LinearGradient colors={['#7C3AED', '#A855F7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.ctaGrad}>
                             <Text style={s.ctaText}>
-                                {isProcessing ? 'Processing Payment...' : `Upgrade to Premium · ${plan.price}`}
+                                {isProcessing
+                                    ? 'Processing Payment...'
+                                    : user?.isPremium
+                                        ? 'Primary Plan Active'
+                                        : `Upgrade to Premium · ${plan.price}`}
                             </Text>
-                            {!isProcessing && <Feather name="arrow-right" size={18} color="#FFF" style={{ marginLeft: 8 }} />}
+                            {!isProcessing && !user?.isPremium && <Feather name="arrow-right" size={18} color="#FFF" style={{ marginLeft: 8 }} />}
                         </LinearGradient>
                     </TouchableOpacity>
                     <Text style={s.ctaNote}>🔒 Secure payment · Cancel anytime · 7-day refund policy</Text>

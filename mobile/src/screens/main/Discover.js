@@ -1041,7 +1041,7 @@ export default function Discover({ navigation }) {
                     </TouchableOpacity>
                   ))
                 ) : (
-                  <View style={{ width: SCREEN_WIDTH - 40, marginLeft: 20 }}>
+                  <View style={{ width: SCREEN_WIDTH - 40 }}>
                     <EmptyState
                       compact
                       icon="moon"
@@ -1078,7 +1078,7 @@ export default function Discover({ navigation }) {
                 ) : groups.length > 0 ? (
                   groups.slice(0, 5).map((g, idx) => renderGroupItem(g, idx))
                 ) : (
-                  <View style={{ width: SCREEN_WIDTH - 40, marginLeft: 20 }}>
+                  <View style={{ width: SCREEN_WIDTH - 40 }}>
                     <EmptyState
                       compact
                       icon="users"
@@ -1185,34 +1185,34 @@ export default function Discover({ navigation }) {
           }
           ListEmptyComponent={
             <EmptyState
-              icon={hasLocation ? "users" : "map-pin"}
+              icon={authUser?.location?.coordinates ? "users" : "map-pin"}
               title={
-                hasLocation
+                authUser?.location?.coordinates
                   ? myInterests.length === 0
                     ? "Add your interests"
                     : "No people found"
                   : "Location Required"
               }
               description={
-                hasLocation
+                authUser?.location?.coordinates
                   ? myInterests.length === 0
                     ? "Add interests to your profile to find people who share your passions."
                     : "Try a different interest or expand your search radius."
                   : "Enable location services to discover people near you."
               }
               actionLabel={
-                hasLocation
+                authUser?.location?.coordinates
                   ? myInterests.length === 0
                     ? "Edit Profile"
                     : "Reset Filters"
                   : "Enable Location"
               }
               onAction={
-                hasLocation
+                authUser?.location?.coordinates
                   ? myInterests.length === 0
                     ? () => navigation.navigate("Profile")
                     : resetFilters
-                  : handleManualLocationRequest
+                  : requestLocationPermission
               }
             />
           }
@@ -1358,10 +1358,10 @@ export default function Discover({ navigation }) {
             }}
             ListEmptyComponent={
               <EmptyState
-                icon="map-pin"
-                title="No neighbors found"
-                description="Try increasing your radius or check if your location is shared."
-                actionLabel="Expand search"
+                icon="radio"
+                title="No one in range"
+                description="We couldn't find anyone within this radius. Try expanding your search area."
+                actionLabel="Expand Radius"
                 onAction={() => setFilterVisible(true)}
               />
             }

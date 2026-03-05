@@ -295,7 +295,7 @@ export default function Settings({ navigation }) {
                     </TouchableOpacity>
                 )}
 
-                {/* DISCOVERY PREFERENCES */}
+                {/* 
                 <SectionLabel label="Discovery Preferences" />
                 <View style={s.card}>
                     <View style={s.settingBlock}>
@@ -334,8 +334,9 @@ export default function Settings({ navigation }) {
                         }}
                     />
                 </View>
+                */}
 
-                {/* NOTIFICATION PREFERENCES */}
+                {/* 
                 <SectionLabel label="Notification Preferences" />
                 <View style={s.card}>
                     <ToggleRow
@@ -385,11 +386,12 @@ export default function Settings({ navigation }) {
                         sub="New requests and accepted connections"
                         value={connEnabled}
                         onValueChange={(val) => {
-                            setConnEnabled(val);
+                            setMsgEnabled(val);
                             handleNotifToggle('connections', val);
                         }}
                     />
                 </View>
+                */}
 
                 {/* ACCOUNT */}
                 <SectionLabel label="Account" />
@@ -405,12 +407,21 @@ export default function Settings({ navigation }) {
                         label="Change Password"
                         onPress={() => setShowPasswordModal(true)}
                     />
+                    {/* 
                     <Divider />
                     <SettingRow
                         icon="star" iconBg="#FEF3C7" iconColor="#D97706"
                         label="Invite Friends"
                         sub="Earn Group Passes"
                         onPress={() => navigation.navigate('Invite')}
+                    />
+                    */}
+                    <Divider />
+                    <SettingRow
+                        icon="award" iconBg="#F5F3FF" iconColor="#7C3AED"
+                        label="Premium Membership"
+                        sub={authUser?.isPremium ? "View benefits & status" : "Upgrade for unlimited access"}
+                        onPress={() => navigation.navigate('Premium')}
                     />
                 </View>
 

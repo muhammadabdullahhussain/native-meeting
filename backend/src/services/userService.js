@@ -108,6 +108,15 @@ exports.discoverNearbyUsers = async (
       { $skip: skip },
       { $limit: limit },
     ]);
+
+    // Fallback if no one found nearby: show anyone (useful for testing or remote locations)
+    if (aggregatedUsers.length === 0 && page === 1) {
+      const fallbackUsers = await User.find(query)
+        .skip(skip)
+        .limit(limit)
+        .lean();
+      aggregatedUsers = fallbackUsers.map(u => ({ ...u, distanceMeters: null }));
+    }
   } else {
     // Fallback: no location yet — show users by match score (ignore distance)
     const users = await User.find(query).skip(skip).limit(limit).lean();

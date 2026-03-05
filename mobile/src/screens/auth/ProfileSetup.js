@@ -248,13 +248,24 @@ export default function ProfileSetup({ navigation, route }) {
 
   const canNext = () => {
     if (step === 0) {
-      const hasBasic =
-        name.trim().length > 0 &&
-        username.trim().length > 0 &&
-        city.trim().length > 0;
-      const hasBirthday =
-        birthDay.length > 0 && birthMonth.length > 0 && birthYear.length === 4;
-      return hasBasic && hasBirthday;
+      // Name: 3+ chars
+      const nameValid = name.trim().length >= 3;
+      // Username: 3-15 chars, alphanumeric + underscores
+      const userRegex = /^[a-zA-Z0-9_]{3,15}$/;
+      const usernameValid = userRegex.test(username.trim());
+      // City: Not empty
+      const cityValid = city.trim().length > 0;
+      // Birthday: DD(1-31), MM(1-12), YYYY(reasonable range)
+      const d = parseInt(birthDay);
+      const m = parseInt(birthMonth);
+      const y = parseInt(birthYear);
+      const currentYear = new Date().getFullYear();
+      const birthdayValid =
+        d >= 1 && d <= 31 &&
+        m >= 1 && m <= 12 &&
+        y >= 1940 && y <= (currentYear - 13);
+
+      return nameValid && usernameValid && cityValid && birthdayValid;
     }
     if (step === 1) return selectedInterests.length >= 3;
     return lookingFor.length > 0;
@@ -341,11 +352,11 @@ export default function ProfileSetup({ navigation, route }) {
 
   const filteredCategories = search
     ? INTEREST_CATEGORIES.map((cat) => ({
-        ...cat,
-        subInterests: cat.subInterests.filter((s) =>
-          s.toLowerCase().includes(search.toLowerCase()),
-        ),
-      })).filter((cat) => cat.subInterests.length > 0)
+      ...cat,
+      subInterests: cat.subInterests.filter((s) =>
+        s.toLowerCase().includes(search.toLowerCase()),
+      ),
+    })).filter((cat) => cat.subInterests.length > 0)
     : INTEREST_CATEGORIES;
 
   const pct = Math.min(100, (selectedInterests.length / MAX_INTERESTS) * 100);
@@ -497,11 +508,11 @@ export default function ProfileSetup({ navigation, route }) {
                   style={[
                     styles.fieldRow,
                     referralCode.length > 0 &&
-                      !isReferralValid &&
-                      !isVerifyingReferral && {
-                        borderColor: "#EF4444",
-                        borderWidth: 1,
-                      },
+                    !isReferralValid &&
+                    !isVerifyingReferral && {
+                      borderColor: "#EF4444",
+                      borderWidth: 1,
+                    },
                   ]}
                 >
                   <Feather
@@ -942,13 +953,33 @@ export default function ProfileSetup({ navigation, route }) {
       {/* BOTTOM CTA */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
         {step === 0 && !canNext() && (
-          <Text style={styles.bottomHint}>
-            {"Please fill all required (*) fields and select your birthday"}
-          </Text>
+          <View style={styles.errorContainer}>
+            {name.trim().length > 0 && name.trim().length < 3 && (
+              <Text style={styles.errorHint}>• Name must be at least 3 characters</Text>
+            )}
+            {username.trim().length > 0 && !/^[a-zA-Z0-9_]{3,15}$/.test(username.trim()) && (
+              <Text style={styles.errorHint}>• Username must be 3-15 chars (letters, numbers, _)</Text>
+            )}
+            {(birthDay.length > 0 || birthMonth.length > 0 || birthYear.length > 0) && (
+              (() => {
+                const d = parseInt(birthDay);
+                const m = parseInt(birthMonth);
+                const y = parseInt(birthYear);
+                const cy = new Date().getFullYear();
+                if (d < 1 || d > 31 || m < 1 || m > 12 || y < 1940 || y > (cy - 13)) {
+                  return <Text style={styles.errorHint}>• Enter a valid birthday (Min age 13)</Text>;
+                }
+                return null;
+              })()
+            )}
+            {(!name.trim() || !username.trim() || !city.trim() || !birthDay || !birthMonth || birthYear.length !== 4) && (
+              <Text style={styles.errorHint}>• Please fill all required (*) fields</Text>
+            )}
+          </View>
         )}
         {step === 1 && selectedInterests.length < 3 && (
           <Text style={styles.bottomHint}>
-            {"Select at least 3 interests to continue"}
+            {"Choose at least 3 interests to continue"}
           </Text>
         )}
         {step === 2 && lookingFor.length === 0 && (
@@ -1409,6 +1440,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textMuted,
     fontFamily: theme.typography.fontFamily.medium,
+  },
+  errorContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
+    alignItems: 'flex-start',
+  },
+  errorHint: {
+    fontSize: 12,
+    color: "#EF4444",
+    fontFamily: theme.typography.fontFamily.medium,
+    marginBottom: 2,
   },
   subWrapSetup: {
     flexDirection: "row",

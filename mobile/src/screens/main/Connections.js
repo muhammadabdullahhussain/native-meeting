@@ -11,6 +11,7 @@ import {
   Modal,
   ScrollView,
   Alert,
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -26,6 +27,7 @@ import { EmptyState } from "../../components/common/EmptyState";
 import PremiumModal from "../../components/PremiumModal";
 import PremiumBadge from "../../components/PremiumBadge";
 import { Share, Clipboard } from "react-native";
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function Connections({ navigation, route }) {
@@ -109,9 +111,9 @@ export default function Connections({ navigation, route }) {
         lastMessage: f.lastMessage?.text || "Say hello! 👋",
         timestamp: f.lastMessage?.createdAt
           ? new Date(f.lastMessage.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
+            hour: "2-digit",
+            minute: "2-digit",
+          })
           : f.connectedAt
             ? new Date(f.connectedAt).toLocaleDateString()
             : "",
@@ -404,7 +406,7 @@ export default function Connections({ navigation, route }) {
   };
 
   const copyInviteLink = async () => {
-    const inviteUrl = `https://interesta.app/join?ref=${authUser?.referralCode || authUser?.id}`;
+    const inviteUrl = `https://interesta.vercel.app/join?ref=${authUser?.referralCode || authUser?.id}`;
     try {
       if (Platform.OS === "web") {
         await Clipboard.setString(inviteUrl);
@@ -1206,37 +1208,49 @@ export default function Connections({ navigation, route }) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={s.suggestStrip}
             >
-              {onlineUsers.map((u, i) => (
-                <TouchableOpacity
-                  key={u.id || u._id || i}
-                  style={s.suggestItem}
-                  onPress={() =>
-                    navigation.navigate("UserProfile", { user: u })
-                  }
-                >
-                  <View style={s.suggestAvatarWrap}>
-                    {u.avatar ? (
-                      <Image
-                        source={{ uri: u.avatar }}
-                        style={s.suggestAvatar}
-                      />
-                    ) : (
-                      <ModernPlaceholder
-                        name={u.name}
-                        size={52}
-                        style={{ borderRadius: 16 }}
-                      />
-                    )}
-                    {u.isOnline && <View style={s.suggestOnlineDot} />}
-                  </View>
-                  <Text style={s.suggestName} numberOfLines={1}>
-                    {u.name.split(" ")[0]}
-                  </Text>
-                  <Text style={s.suggestDist}>
-                    {u.distanceKm ? `${u.distanceKm} km` : "Nearby"}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {onlineUsers.length > 0 ? (
+                onlineUsers.map((u, i) => (
+                  <TouchableOpacity
+                    key={u.id || u._id || i}
+                    style={s.suggestItem}
+                    onPress={() =>
+                      navigation.navigate("UserProfile", { user: u })
+                    }
+                  >
+                    <View style={s.suggestAvatarWrap}>
+                      {u.avatar ? (
+                        <Image
+                          source={{ uri: u.avatar }}
+                          style={s.suggestAvatar}
+                        />
+                      ) : (
+                        <ModernPlaceholder
+                          name={u.name}
+                          size={52}
+                          style={{ borderRadius: 16 }}
+                        />
+                      )}
+                      {u.isOnline && <View style={s.suggestOnlineDot} />}
+                    </View>
+                    <Text style={s.suggestName} numberOfLines={1}>
+                      {u.name.split(" ")[0]}
+                    </Text>
+                    <Text style={s.suggestDist}>
+                      {u.distanceKm ? `${u.distanceKm} km` : "Nearby"}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <EmptyState
+                  compact
+                  icon="radio"
+                  title="No one nearby"
+                  description="Expand your radius to find people"
+                  actionLabel="Discover"
+                  onAction={() => navigation.navigate("Discover")}
+                  style={{ width: SCREEN_WIDTH - 40, marginHorizontal: 2 }}
+                />
+              )}
             </ScrollView>
           </View>
 
@@ -1302,22 +1316,13 @@ export default function Connections({ navigation, route }) {
               ))}
 
               {filteredChats(chats).length === 0 && (
-                <View style={s.empty}>
-                  <View style={s.emptyIconBox}>
-                    <Feather name="message-square" size={32} color="#6366F1" />
-                  </View>
-                  <Text style={s.emptyTitle}>No conversations yet</Text>
-                  <Text style={s.emptySub}>
-                    Connect with people to start meaningful conversations.
-                  </Text>
-                  <TouchableOpacity
-                    style={s.emptyBtn}
-                    onPress={() => navigation.navigate("Discover")}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={s.emptyBtnText}>Find People to Chat</Text>
-                  </TouchableOpacity>
-                </View>
+                <EmptyState
+                  icon="message-circle"
+                  title="No conversations yet"
+                  description="Connect with people to start meaningful conversations."
+                  actionLabel="Find People to Chat"
+                  onAction={() => navigation.navigate("Discover")}
+                />
               )}
             </>
           )}
@@ -1343,23 +1348,13 @@ export default function Connections({ navigation, route }) {
               contentContainerStyle={s.listContent}
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={() => (
-                <View style={s.empty}>
-                  <View style={s.emptyIconBox}>
-                    <Feather name="inbox" size={36} color="#6366F1" />
-                  </View>
-                  <Text style={s.emptyTitle}>No pending requests</Text>
-                  <Text style={s.emptySub}>
-                    When someone messages you for the first time, it'll appear
-                    here.
-                  </Text>
-                  <TouchableOpacity
-                    style={s.emptyBtn}
-                    onPress={() => navigation.navigate("Discover")}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={s.emptyBtnText}>Discover People</Text>
-                  </TouchableOpacity>
-                </View>
+                <EmptyState
+                  icon="inbox"
+                  title="No pending requests"
+                  description="When someone messages you for the first time, it'll appear here."
+                  actionLabel="Discover People"
+                  onAction={() => navigation.navigate("Discover")}
+                />
               )}
             />
           )}
@@ -1434,23 +1429,13 @@ export default function Connections({ navigation, route }) {
               );
             }}
             ListEmptyComponent={() => (
-              <View style={s.empty}>
-                <View style={s.emptyIconBox}>
-                  <Feather name="user-plus" size={32} color="#6366F1" />
-                </View>
-                <Text style={s.emptyTitle}>No one nearby yet</Text>
-                <Text style={s.emptySub}>
-                  Looks like there's no one online in your immediate vicinity.
-                  Try expanding your search!
-                </Text>
-                <TouchableOpacity
-                  style={s.emptyBtn}
-                  onPress={() => navigation.navigate("Discover")}
-                  activeOpacity={0.8}
-                >
-                  <Text style={s.emptyBtnText}>Explore More People</Text>
-                </TouchableOpacity>
-              </View>
+              <EmptyState
+                icon="users"
+                title="No one nearby yet"
+                description="Looks like there's no one online in your immediate vicinity. Try expanding your search!"
+                actionLabel="Explore More People"
+                onAction={() => navigation.navigate("Discover")}
+              />
             )}
           />
         </View>

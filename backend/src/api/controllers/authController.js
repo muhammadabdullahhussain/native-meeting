@@ -48,6 +48,8 @@ exports.register = catchAsync(async (req, res, next) => {
                 unlockedGroupPasses: user.unlockedGroupPasses || 0,
                 lastSeen: user.lastSeen,
                 responseRate: user.responseRate || null,
+                location: user.location,
+                settings: user.settings,
             }
         }
     });
@@ -104,6 +106,8 @@ exports.login = catchAsync(async (req, res, next) => {
                 unlockedGroupPasses: user.unlockedGroupPasses || 0,
                 lastSeen: user.lastSeen,
                 responseRate: user.responseRate || null,
+                location: user.location,
+                settings: user.settings,
             }
         }
     });
@@ -152,6 +156,7 @@ exports.getMe = catchAsync(async (req, res, next) => {
                 connectionCount: user.connectionCount || 0,
                 lastSeen: user.lastSeen,
                 responseRate: user.responseRate || null,
+                location: user.location,
                 settings: user.settings,
             }
         }

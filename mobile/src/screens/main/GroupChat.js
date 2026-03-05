@@ -207,7 +207,7 @@ export default function GroupChat({ navigation, route }) {
                 offMsg();
                 offTyping();
                 if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                emitWithAck('typing', { groupId: group._id, senderId: (me?.id || me?._id), senderName: me?.name, senderAvatar: me?.avatar, isTyping: false, receiverId: null }).catch(() => {});
+                emitWithAck('typing', { groupId: group._id, senderId: (me?.id || me?._id), senderName: me?.name, senderAvatar: me?.avatar, isTyping: false, receiverId: null }).catch(() => { });
             };
         }
     }, [group?._id, me?._id, me?.avatar]);
@@ -305,7 +305,7 @@ export default function GroupChat({ navigation, route }) {
                 senderAvatar: me?.avatar,
                 isTyping: isCurrentlyTyping,
                 receiverId: null // Explicitly NOT a direct chat
-            }).catch(() => {});
+            }).catch(() => { });
 
             // Clear existing timeout
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -320,7 +320,7 @@ export default function GroupChat({ navigation, route }) {
                         senderAvatar: me?.avatar,
                         isTyping: false,
                         receiverId: null
-                    }).catch(() => {});
+                    }).catch(() => { });
                 }, 3000);
             }
         }
@@ -340,7 +340,7 @@ export default function GroupChat({ navigation, route }) {
                 senderId: (me?.id || me?._id),
                 senderName: me?.name || 'User',
                 isTyping: false
-            }).catch(() => {});
+            }).catch(() => { });
 
             const messageData = {
                 groupId: group._id || group.id,

@@ -493,11 +493,11 @@ export default function Notifications({ navigation }) {
             const count =
               tab === "Requests"
                 ? notifications.filter(
-                    (n) =>
-                      !n.isRead &&
-                      (n.type === "connect_request" ||
-                        n.type === "group_request"),
-                  ).length
+                  (n) =>
+                    !n.isRead &&
+                    (n.type === "connect_request" ||
+                      n.type === "group_request"),
+                ).length
                 : 0;
             return (
               <TouchableOpacity

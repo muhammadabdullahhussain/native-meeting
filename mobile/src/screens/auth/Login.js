@@ -96,17 +96,29 @@ export default function Login({ navigation }) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    if (!cleanEmail || !cleanEmail.includes("@")) {
-      setError("Please enter a valid email address.");
+    // Robust Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setError("Please enter a valid email address (e.g. name@domain.com).");
       return;
     }
-    if (!cleanPassword || cleanPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    if (!isLogin && !name.trim()) {
-      setError("Please enter your full name.");
-      return;
+
+    if (!isLogin) {
+      if (!name.trim() || name.trim().length < 3) {
+        setError("Please enter your full name (at least 3 characters).");
+        return;
+      }
+
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      if (!cleanPassword || !passwordRegex.test(cleanPassword)) {
+        setError("Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.");
+        return;
+      }
+    } else {
+      if (!cleanPassword || cleanPassword.length < 6) {
+        setError("Incorrect password format.");
+        return;
+      }
     }
 
     setIsLoading(true);

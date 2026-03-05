@@ -29,6 +29,7 @@ import { authService } from "../../api/authService";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 import { ModernPlaceholder } from "../../components/common/ModernPlaceholder";
+import PremiumBadge from "../../components/PremiumBadge";
 import { LOCAL_IP } from "../../config";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -372,14 +373,15 @@ export default function Profile({ navigation, route }) {
 
         {/* BLOCK 1 — IDENTITY */}
         <View style={s.identity}>
-          <View style={s.nameRow}>
-            <Text style={s.name}>{user.name || "Anonymous User"}</Text>
-            {user.isPremium && (
-              <View style={s.crownBadge}>
-                <Text>👑</Text>
-              </View>
-            )}
-          </View>
+          {user.isPremium && (
+            <View style={s.premiumBadgeWrapper}>
+              <PremiumBadge size={16} />
+              <Text style={s.premiumBadgeText}>Premium Member</Text>
+            </View>
+          )}
+          <Text style={s.name} numberOfLines={2}>
+            {user.name || "Anonymous User"}
+          </Text>
           <Text style={s.headline}>
             {user.jobTitle || "No Title Set"}
             {user.company ? ` · ${user.company}` : ""}
@@ -463,8 +465,16 @@ export default function Profile({ navigation, route }) {
           <TouchableOpacity
             style={s.shareSecondaryBtn}
             onPress={() => setShareModal(true)}
+            activeOpacity={0.88}
           >
-            <Feather name="share-2" size={20} color={theme.colors.primary} />
+            <LinearGradient
+              colors={[theme.colors.primary, "#084B8A"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={s.shareSecondaryBtnGrad}
+            >
+              <Feather name="share-2" size={20} color="#FFF" />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -683,15 +693,23 @@ export default function Profile({ navigation, route }) {
                 </View>
                 {/* Removed artificial 30 cap meter track, relying on pure numbers for cleaner look */}
 
-                {!user.isPremium && (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate("Premium")}
-                  >
-                    <Text style={s.meterUpgrade}>
-                      Unlock unlimited with Premium →
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("Premium")}
+                >
+                  <Text style={s.meterUpgrade}>
+                    {user.isPremium ? "View Your Premium Benefits →" : "Unlock unlimited with Premium →"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={s.card}>
+                <CardLabel label="Membership" icon="award" />
+                <InfoRow
+                  icon="award"
+                  value={user.isPremium ? "Premium Member" : "Standard Member"}
+                  onPress={() => navigation.navigate("Premium")}
+                  last
+                />
               </View>
               <View style={s.card}>
                 <CardLabel label="Share Profile" icon="share-2" />
@@ -699,7 +717,7 @@ export default function Profile({ navigation, route }) {
                   style={s.qrBox}
                   activeOpacity={0.8}
                   onPress={async () => {
-                    const url = `https://interesta.app/${user.username}`;
+                    const url = `https://interesta.vercel.app/${user.username}`;
                     try {
                       await Share.share({
                         message: `Check out my profile on Interesta! ${url}`,
@@ -717,7 +735,7 @@ export default function Profile({ navigation, route }) {
                     style={s.qrInner}
                   >
                     <Feather name="link-2" size={32} color="#6366F1" />
-                    <Text style={s.qrUrl}>interesta.app/{user.username}</Text>
+                    <Text style={s.qrUrl}>interesta.vercel.app/{user.username}</Text>
                     <Text style={s.tapToShare}>Tap to share</Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -1170,13 +1188,13 @@ export default function Profile({ navigation, route }) {
                 <Feather name="link-2" size={16} color="#6366F1" />
               </View>
               <Text style={s.shareLinkText} numberOfLines={1}>
-                interesta.app/{user.username}
+                interesta.vercel.app/{user.username}
               </Text>
               <TouchableOpacity
                 style={s.shareLinkCopyBtn}
                 onPress={async () => {
                   await Clipboard.setStringAsync(
-                    `interesta.app/${user.username}`,
+                    `interesta.vercel.app/${user.username}`,
                   );
                   showToast(
                     "Copied! ✅",
@@ -1189,7 +1207,7 @@ export default function Profile({ navigation, route }) {
               </TouchableOpacity>
             </View>
 
-            {/* Share options grid */}
+            {/* 
             <Text style={s.shareViaLabel}>Share via</Text>
             <View style={s.shareGridRow}>
               {[
@@ -1256,6 +1274,7 @@ export default function Profile({ navigation, route }) {
                 </TouchableOpacity>
               ))}
             </View>
+            */}
           </View>
         </View>
       </Modal>
@@ -1448,22 +1467,32 @@ const s = StyleSheet.create({
 
   // IDENTITY
   identity: { alignItems: "center", paddingHorizontal: 24, marginBottom: 20 },
-  nameRow: {
+  premiumBadgeWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+    gap: 6,
+  },
+  premiumBadgeText: {
+    fontSize: 11,
+    fontFamily: theme.typography.fontFamily.bold,
+    color: "#92400E",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   name: {
-    fontSize: 28,
+    fontSize: 26,
     fontFamily: theme.typography.fontFamily.bold,
     color: "#0F172A",
-  },
-  crownBadge: {
-    backgroundColor: "#FEF3C7",
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    textAlign: "center",
+    lineHeight: 32,
+    marginBottom: 4,
   },
   headline: {
     fontSize: 15,
@@ -1566,11 +1595,13 @@ const s = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: "#EDF5FD",
+    overflow: "hidden",
+    ...theme.shadows.medium,
+  },
+  shareSecondaryBtnGrad: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#D1E4F8",
   },
 
   // PREMIUM BANNER

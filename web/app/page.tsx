@@ -13,8 +13,22 @@ import {
   Clock3,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import AuthModal from "../components/AuthModal";
 
 export default function Home() {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+
+  const openSignUp = () => {
+    setAuthMode("signup");
+    setIsAuthModalOpen(true);
+  };
+
+  const openLogin = () => {
+    setAuthMode("login");
+    setIsAuthModalOpen(true);
+  };
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -119,12 +133,12 @@ export default function Home() {
                 variants={itemVariants}
                 className="flex flex-col sm:flex-row items-center justify-center gap-4"
               >
-                <a
-                  href="#"
+                <button
+                  onClick={openSignUp}
                   className="w-full sm:w-auto px-8 py-4 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-primary/25"
                 >
                   Start Free Today <ArrowRight size={20} />
-                </a>
+                </button>
                 <Link
                   href="/about"
                   className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl font-semibold text-lg transition-all backdrop-blur-sm"
@@ -326,12 +340,12 @@ export default function Home() {
                 communities every day.
               </p>
               <div className="flex items-center justify-center flex-wrap gap-4">
-                <a
-                  href="#"
+                <button
+                  onClick={openSignUp}
                   className="inline-flex items-center gap-3 px-8 py-4 bg-white text-bg hover:bg-gray-100 rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-xl shadow-white/10"
                 >
                   Get Started for Free <ArrowRight size={20} />
-                </a>
+                </button>
                 <Link
                   href="/pricing"
                   className="inline-flex items-center gap-2 px-8 py-4 border border-white/20 text-white rounded-xl font-semibold hover:bg-white/10 transition-colors"
@@ -344,6 +358,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authMode}
+      />
     </div>
   );
 }
