@@ -121,20 +121,29 @@ export default function Notifications({ navigation }) {
 
   // Helper for relative time
   const getRelativeTime = (date) => {
-    if (diffSec < 60) return t("notifications.just_now", "Just now");
+    const past = new Date(date);
+    if (isNaN(past.getTime())) return '';
+    const now = new Date();
+    const diffMs = now - past;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDays = Math.floor(diffHr / 24);
+
+    if (diffSec < 60) return t('notifications.just_now', 'Just now');
     if (diffMin < 60)
-      return t("notifications.minutes_ago", {
+      return t('notifications.minutes_ago', {
         count: diffMin,
         defaultValue: `${diffMin}m ago`,
       });
     if (diffHr < 24)
-      return t("notifications.hours_ago", {
+      return t('notifications.hours_ago', {
         count: diffHr,
         defaultValue: `${diffHr}h ago`,
       });
-    if (diffDays === 1) return t("notifications.yesterday", "Yesterday");
+    if (diffDays === 1) return t('notifications.yesterday', 'Yesterday');
     if (diffDays < 7)
-      return t("notifications.days_ago", {
+      return t('notifications.days_ago', {
         count: diffDays,
         defaultValue: `${diffDays}d ago`,
       });
@@ -466,9 +475,9 @@ export default function Notifications({ navigation }) {
             <Text style={styles.headerSubtitle}>
               {unreadCount > 0
                 ? t("notifications.new_updates_count", {
-                    count: unreadCount,
-                    defaultValue: `${unreadCount} new updates`,
-                  })
+                  count: unreadCount,
+                  defaultValue: `${unreadCount} new updates`,
+                })
                 : t("notifications.empty_title")}
             </Text>
           </View>
