@@ -295,7 +295,6 @@ export default function Settings({ navigation }) {
                     </TouchableOpacity>
                 )}
 
-                {/* 
                 <SectionLabel label="Discovery Preferences" />
                 <View style={s.card}>
                     <View style={s.settingBlock}>
@@ -334,7 +333,6 @@ export default function Settings({ navigation }) {
                         }}
                     />
                 </View>
-                */}
 
                 {/* 
                 <SectionLabel label="Notification Preferences" />

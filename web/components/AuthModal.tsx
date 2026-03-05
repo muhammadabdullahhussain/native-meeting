@@ -36,9 +36,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
                 setError("Name must be at least 3 characters.");
                 return false;
             }
-            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
             if (!passwordRegex.test(password)) {
-                setError("Password must be 8+ chars with uppercase, lowercase, number & special char.");
+                setError("Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.");
                 return false;
             }
         } else {

@@ -87,16 +87,7 @@ export default function Profile({ navigation, route }) {
 
   // Compute 'last active' label from real lastSeen
   const getActiveLabel = (ls) => {
-    if (!ls) return "Recently";
-    const diffMs = Date.now() - new Date(ls).getTime();
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 5) return "Active Now";
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    if (days === 1) return "Yesterday";
-    return `${days} days ago`;
+    return "Recently";
   };
 
   // Initialize derived state from Auth
@@ -109,10 +100,7 @@ export default function Profile({ navigation, route }) {
       "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1200",
     conversations: authUser?.connectionCount ?? 0,
     responseRate: authUser?.responseRate ?? null,
-    activeStatus:
-      isConnected || authUser?.onlineStatus
-        ? "Active Now"
-        : getActiveLabel(authUser?.lastSeen),
+    activeStatus: "Recently",
     availability: authUser?.availability || [],
     memberSince: authUser?.memberSince || "Recently",
   });
@@ -146,10 +134,7 @@ export default function Profile({ navigation, route }) {
           ? prev.conversations
           : (authUser?.connectionCount ?? 0),
       responseRate: authUser?.responseRate ?? null,
-      activeStatus:
-        isConnected || authUser?.onlineStatus
-          ? "Active Now"
-          : getActiveLabel(authUser?.lastSeen),
+      activeStatus: "Recently",
       availability: authUser?.availability || [],
       memberSince: authUser?.memberSince || "Recently",
     }));
@@ -391,30 +376,6 @@ export default function Profile({ navigation, route }) {
             <Text style={s.locationText}>
               {" "}
               {user.city || "Location not set"}
-            </Text>
-          </View>
-          <View style={s.statusRow}>
-            <View
-              style={[
-                s.onlineDot,
-                {
-                  backgroundColor:
-                    user.activeStatus === "Active Now" ? "#22C55E" : "#94A3B8",
-                },
-              ]}
-            />
-            <Text
-              style={[
-                s.statusText,
-                {
-                  color:
-                    user.activeStatus === "Active Now" ? "#166534" : "#475569",
-                },
-              ]}
-            >
-              {user.activeStatus === "Active Now"
-                ? "Active Now"
-                : `Active ${user.activeStatus}`}
             </Text>
           </View>
         </View>

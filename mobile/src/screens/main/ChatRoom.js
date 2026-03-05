@@ -382,7 +382,6 @@ export default function ChatRoom({ route, navigation }) {
                             ) : (
                                 <ModernPlaceholder name={user?.name} size={44} style={{ borderRadius: 14 }} />
                             )}
-                            {userStatus === 'online' && <View style={s.headerOnlineDot} />}
                         </View>
                         <View style={{ flex: 1, marginLeft: 12, marginRight: 8 }}>
                             <Text style={s.headerName} numberOfLines={1} ellipsizeMode="tail">{user?.name || 'Chat'}</Text>
@@ -393,7 +392,7 @@ export default function ChatRoom({ route, navigation }) {
                                 ]}
                                 numberOfLines={1}
                             >
-                                {isTyping ? 'typing...' : userStatus === 'online' ? '● Active now' : 'Tap to view profile'}
+                                {isTyping ? 'typing...' : 'Tap to view profile'}
                             </Text>
                         </View>
                     </TouchableOpacity>

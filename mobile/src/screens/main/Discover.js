@@ -969,88 +969,7 @@ export default function Discover({ navigation }) {
           }
           ListHeaderComponent={
             <>
-              <View style={styles.sectionHeader}>
-                <View
-                  style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-                >
-                  <View
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: "#22C55E",
-                    }}
-                  />
-                  <Text style={styles.sectionTitle}>Active Now</Text>
-                </View>
-                {!isLoading && (
-                  <Text style={styles.sectionSub}>
-                    {onlineUsers.length} online
-                  </Text>
-                )}
-              </View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.activeStrip}
-              >
-                {isLoading ? (
-                  [1, 2, 3, 4].map((_, i) => (
-                    <View key={i} style={[styles.activeItem, { opacity: 0.6 }]}>
-                      <Skeleton
-                        width={54}
-                        height={54}
-                        borderRadius={18}
-                        style={{ marginBottom: 6 }}
-                      />
-                      <Skeleton width="70%" height={10} borderRadius={4} />
-                    </View>
-                  ))
-                ) : onlineUsers.length > 0 ? (
-                  onlineUsers.map((u) => (
-                    <TouchableOpacity
-                      key={u.id || u._id}
-                      style={styles.activeItem}
-                      activeOpacity={0.85}
-                      onPress={() =>
-                        navigation.navigate("UserProfile", { user: u })
-                      }
-                    >
-                      <View style={styles.activeAvatarWrap}>
-                        {u.avatar ? (
-                          <Image
-                            source={{ uri: u.avatar }}
-                            style={styles.activeAvatar}
-                          />
-                        ) : (
-                          <ModernPlaceholder
-                            name={u.name}
-                            size={54}
-                            style={{ borderRadius: 18 }}
-                          />
-                        )}
-                        <View style={styles.activeOnlineDot} />
-                      </View>
-                      <Text style={styles.activeName} numberOfLines={1}>
-                        {u.name.split(" ")[0]}
-                      </Text>
-                      <Text style={styles.activeDist}>
-                        {u.distanceKm ? `${u.distanceKm} km` : "Nearby"}
-                      </Text>
-                    </TouchableOpacity>
-                  ))
-                ) : (
-                  <View style={{ width: SCREEN_WIDTH - 40 }}>
-                    <EmptyState
-                      compact
-                      icon="moon"
-                      title="Quiet right now"
-                      description="No users are currently online nearby."
-                    />
-                  </View>
-                )}
-              </ScrollView>
+              <View style={{ height: 16 }} />
 
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Groups For You</Text>
@@ -1184,7 +1103,7 @@ export default function Discover({ navigation }) {
             </>
           }
           ListEmptyComponent={
-            <EmptyState
+            < EmptyState
               icon={authUser?.location?.coordinates ? "users" : "map-pin"}
               title={
                 authUser?.location?.coordinates
@@ -1834,7 +1753,7 @@ export default function Discover({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </View >
   );
 }
 
