@@ -6,6 +6,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../theme/theme';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -17,6 +18,7 @@ import { ModernPlaceholder } from '../../components/common/ModernPlaceholder';
 export default function UserProfile({ route, navigation }) {
     const { user: authUser, blockedUserIds, addToBlocked, removeFromBlocked } = useAuth();
     const { showToast, confirmAction } = useToast();
+    const { t } = useTranslation();
 
     // Safety Fallbacks
     const myInterests = authUser?.interests || [];
@@ -71,7 +73,7 @@ export default function UserProfile({ route, navigation }) {
 
     const sendMessageRequest = async () => {
         if (requestSent || connectionStatus === 'pending') {
-            showToast('Already Sent', 'Your message request is pending acceptance.', 'info');
+            showToast(t('common.info', 'Info'), t('user_profile.message_pending'), 'info');
             return;
         }
 
@@ -81,9 +83,9 @@ export default function UserProfile({ route, navigation }) {
             setConnectionStatus('pending');
             setIsRequester(true);
             setShowMessageModal(false);
-            showToast('Request Sent! ✅', `${user.name} will see your message request.`, 'success');
+            showToast(t('user_profile.connect') + ' ✅', `${user.name} will see your message request.`, 'success');
         } catch (err) {
-            showToast('Error', err.message || 'Failed to send request', 'error');
+            showToast(t('common.error'), err.message || 'Failed to send request', 'error');
         }
     };
 
@@ -92,9 +94,9 @@ export default function UserProfile({ route, navigation }) {
             await authService.blockUser(userId);
             addToBlocked(userId);
             setConnectionStatus('blocked');
-            showToast('User Blocked', `${user.name} has been restricted.`, 'info');
+            showToast(t('user_profile.blocked_title'), t('user_profile.blocked_msg', { name: user.name }), 'info');
         } catch (err) {
-            showToast('Error', err.message || 'Failed to block user', 'error');
+            showToast(t('common.error'), err.message || 'Failed to block user', 'error');
         }
     };
 
@@ -104,9 +106,9 @@ export default function UserProfile({ route, navigation }) {
             removeFromBlocked(userId);
             const statusData = await authService.getConnectionStatus(userId);
             setConnectionStatus(statusData.status);
-            showToast('User Unblocked', `${user.name} has been restored.`, 'success');
+            showToast(t('user_profile.unblock_title'), `${user.name} has been restored.`, 'success');
         } catch (err) {
-            showToast('Error', err.message || 'Failed to unblock user', 'error');
+            showToast(t('common.error'), err.message || 'Failed to unblock user', 'error');
         }
     };
 
@@ -114,12 +116,20 @@ export default function UserProfile({ route, navigation }) {
         try {
             await authService.reportUser(userId, reason);
             setReportVisible(false);
-            showToast('Reported ✅', 'Thank you. The user has been reported and blocked.', 'success');
+            showToast(t('user_profile.report_success', 'Reported ✅'), t('user_profile.report_success_msg'), 'success');
             navigation.goBack();
         } catch (err) {
-            showToast('Error', err.message || 'Failed to report user', 'error');
+            showToast(t('common.error'), err.message || 'Failed to report user', 'error');
         }
     };
+
+    const reportReasons = [
+        t('user_profile.report_fake'),
+        t('user_profile.report_inappropriate'),
+        t('user_profile.report_spam'),
+        t('user_profile.report_harassment'),
+        t('user_profile.report_other'),
+    ];
 
     return (
         <View style={s.root}>
@@ -184,20 +194,20 @@ export default function UserProfile({ route, navigation }) {
                     <View style={s.locationBadge}>
                         <Feather name="map-pin" size={12} color="#6366F1" />
                         <Text style={s.locationLabel}>
-                            {user.city || 'Location Hidden'}
-                            {user.distanceKm ? ` · ${user.distanceKm < 2 ? 'Nearby' : `${user.distanceKm} km`}` : ''}
+                            {user.city || t('user_profile.location_hidden')}
+                            {user.distanceKm ? ` · ${user.distanceKm < 2 ? t('user_profile.nearby') : `${user.distanceKm} km`}` : ''}
                         </Text>
                     </View>
                 </View>
 
-                {/* Match score + shared interests — only show if data exists and is significant */}
+                {/* Match score + shared interests */}
                 {sharedInterests.length > 0 && matchScore > 0 && (
                     <View style={s.matchCard}>
                         <LinearGradient colors={['#F5F3FF', '#EDE9FE']} style={s.matchGrad}>
                             <View style={s.matchRow}>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={s.matchLabel}>Interest Match</Text>
-                                    <Text style={s.matchScore}>{matchScore}% Compatible</Text>
+                                    <Text style={s.matchLabel}>{t('user_profile.interest_match')}</Text>
+                                    <Text style={s.matchScore}>{matchScore}% {t('user_profile.compatible', { score: matchScore }).replace(`${matchScore}% `, '')}</Text>
                                 </View>
                                 <View style={s.matchBubbles}>
                                     {sharedInterests.slice(0, 3).map(i => (
@@ -222,44 +232,43 @@ export default function UserProfile({ route, navigation }) {
                 {/* CTA Buttons */}
                 <View style={s.ctaRow}>
                     {isLoadingStatus ? (
-                        // Loading skeleton while fetching connection status
                         <View style={[s.msgCta, { backgroundColor: '#F1F5F9', borderRadius: 18, height: 52, justifyContent: 'center', alignItems: 'center' }]}>
-                            <Text style={{ color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium }}>Checking status...</Text>
+                            <Text style={{ color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium }}>{t('user_profile.checking_status')}</Text>
                         </View>
                     ) : connectionStatus === 'accepted' ? (
                         <TouchableOpacity style={s.msgCta} onPress={() => navigation.navigate('ChatRoom', { user })} activeOpacity={0.88}>
                             <LinearGradient colors={['#22C55E', '#16A34A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.msgCtaGrad}>
                                 <Feather name="message-circle" size={16} color="#FFF" style={{ marginRight: 8 }} />
-                                <Text style={s.msgCtaText}>Open Chat</Text>
+                                <Text style={s.msgCtaText}>{t('user_profile.open_chat')}</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                     ) : (connectionStatus === 'pending' || requestSent) ? (
                         <View style={s.sentBadge}>
                             <Feather name="clock" size={16} color="#6366F1" style={{ marginRight: 8 }} />
                             <Text style={s.sentBadgeText}>
-                                {isRequester ? 'Message Request Pending' : 'Sent you a request'}
+                                {isRequester ? t('user_profile.message_pending') : t('user_profile.sent_request')}
                             </Text>
                         </View>
                     ) : (
                         <TouchableOpacity style={s.msgCta} onPress={() => setShowMessageModal(true)} activeOpacity={0.88}>
                             <LinearGradient colors={['#6366F1', '#7C3AED']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.msgCtaGrad}>
                                 <Feather name="send" size={16} color="#FFF" style={{ marginRight: 8 }} />
-                                <Text style={s.msgCtaText}>Send Message Request</Text>
+                                <Text style={s.msgCtaText}>{t('user_profile.send_request')}</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                     )}
                     <TouchableOpacity style={[s.blockBtn, connectionStatus === 'blocked' && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }]} onPress={() =>
                         connectionStatus === 'blocked' ?
                             confirmAction({
-                                title: 'Unblock User',
-                                message: `Do you want to unblock ${user.name}? This will allow them to message you again.`,
-                                confirmText: 'Unblock',
+                                title: t('user_profile.unblock_title'),
+                                message: t('user_profile.unblock_msg', { name: user.name }),
+                                confirmText: t('user_profile.unblock_confirm'),
                                 onConfirm: handleUnblock
                             }) :
                             confirmAction({
-                                title: 'Block User',
-                                message: `Are you sure you want to block ${user.name}? You will no longer see each other's profiles or chats.`,
-                                confirmText: 'Block',
+                                title: t('user_profile.block_title'),
+                                message: t('user_profile.block_msg', { name: user.name }),
+                                confirmText: t('user_profile.block_confirm'),
                                 confirmStyle: 'destructive',
                                 onConfirm: handleBlock
                             })
@@ -271,18 +280,18 @@ export default function UserProfile({ route, navigation }) {
                 {/* About */}
                 {user.bio ? (
                     <View style={s.card}>
-                        <Text style={s.cardTitle}>About</Text>
+                        <Text style={s.cardTitle}>{t('user_profile.about')}</Text>
                         <Text style={s.bioText}>{user.bio}</Text>
                     </View>
                 ) : null}
 
                 {/* Info row */}
                 <View style={s.card}>
-                    <Text style={s.cardTitle}>Details</Text>
+                    <Text style={s.cardTitle}>{t('user_profile.details')}</Text>
                     {[
-                        { icon: 'map-pin', label: 'Location', value: user.city },
-                        { icon: 'activity', label: 'Response Rate', value: `${user.responseRate || 85}%` },
-                        { icon: 'heart', label: 'Looking For', value: (user.lookingFor || []).join(', ') || 'Open to anything' },
+                        { icon: 'map-pin', label: t('user_profile.location'), value: user.city },
+                        { icon: 'activity', label: t('user_profile.response_rate'), value: `${user.responseRate || 85}%` },
+                        { icon: 'heart', label: t('user_profile.looking_for'), value: (user.lookingFor || []).join(', ') || 'Open to anything' },
                     ].filter(r => r.value).map((row, i) => (
                         <View key={i} style={s.detailRow}>
                             <View style={s.detailIcon}><Feather name={row.icon} size={15} color="#6366F1" /></View>
@@ -297,7 +306,7 @@ export default function UserProfile({ route, navigation }) {
                 {/* Interests */}
                 {user.interests?.length > 0 && (
                     <View style={s.card}>
-                        <Text style={s.cardTitle}>Interests</Text>
+                        <Text style={s.cardTitle}>{t('user_profile.interests')}</Text>
                         <View style={s.chipsWrap}>
                             {user.interests.map((tag, i) => {
                                 const isShared = myInterests.includes(tag);
@@ -316,7 +325,7 @@ export default function UserProfile({ route, navigation }) {
                 {!isPremium && (
                     <TouchableOpacity onPress={() => navigation.navigate('Premium')} style={s.premiumCard} activeOpacity={0.88}>
                         <LinearGradient colors={['#7C3AED', '#A855F7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.premiumGrad}>
-                            <Text style={s.premiumText}>👑 Go Premium to see who viewed your profile and send unlimited requests</Text>
+                            <Text style={s.premiumText}>{t('user_profile.go_premium')}</Text>
                             <Feather name="chevron-right" size={18} color="#FFF" />
                         </LinearGradient>
                     </TouchableOpacity>
@@ -338,16 +347,16 @@ export default function UserProfile({ route, navigation }) {
                             )}
                             <View style={{ flex: 1 }}>
                                 <Text style={s.msgSheetName}>{user.name}</Text>
-                                <Text style={s.msgSheetSub}>Message request · won't count as a chat until accepted</Text>
+                                <Text style={s.msgSheetSub}>{t('user_profile.msg_request_sub')}</Text>
                             </View>
                         </View>
 
                         <View style={s.howItWorksCard}>
-                            <Text style={s.howItWorksTitle}>How Message Requests Work</Text>
+                            <Text style={s.howItWorksTitle}>{t('user_profile.how_requests_work')}</Text>
                             {[
-                                { icon: 'send', text: 'You send a message request (free, no chat slot used)' },
-                                { icon: 'check-circle', text: `${user.name} accepts → becomes your conversation` },
-                                { icon: 'slash', text: 'If declined, no slot is used. No pressure.' },
+                                { icon: 'send', text: t('user_profile.request_step1') },
+                                { icon: 'check-circle', text: t('user_profile.request_step2_accept', { name: user.name }) },
+                                { icon: 'slash', text: t('user_profile.request_step3') },
                             ].map((s2, i) => (
                                 <View key={i} style={s.howRow}>
                                     <View style={s.howIcon}><Feather name={s2.icon} size={14} color="#6366F1" /></View>
@@ -359,11 +368,11 @@ export default function UserProfile({ route, navigation }) {
                         <TouchableOpacity style={s.sendReqBtn} onPress={sendMessageRequest} activeOpacity={0.88}>
                             <LinearGradient colors={['#6366F1', '#7C3AED']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.sendReqBtnGrad}>
                                 <Feather name="send" size={16} color="#FFF" style={{ marginRight: 8 }} />
-                                <Text style={s.sendReqBtnText}>Send Request to {user.name.split(' ')[0]}</Text>
+                                <Text style={s.sendReqBtnText}>{t('user_profile.send_to', { firstName: user.name.split(' ')[0] })}</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                         <TouchableOpacity style={s.cancelBtn} onPress={() => setShowMessageModal(false)} activeOpacity={0.8}>
-                            <Text style={s.cancelBtnText}>Cancel</Text>
+                            <Text style={s.cancelBtnText}>{t('user_profile.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -374,15 +383,15 @@ export default function UserProfile({ route, navigation }) {
                 <View style={s.overlayDark}>
                     <View style={s.msgSheet}>
                         <View style={s.sheetHandle} />
-                        <Text style={[s.msgSheetName, { marginLeft: 4, marginBottom: 16 }]}>Report {user.name}</Text>
-                        {['Fake profile', 'Inappropriate content', 'Spam', 'Harassment', 'Other'].map((reason, i) => (
+                        <Text style={[s.msgSheetName, { marginLeft: 4, marginBottom: 16 }]}>{t('user_profile.report', { name: user.name })}</Text>
+                        {reportReasons.map((reason, i) => (
                             <TouchableOpacity key={i} style={s.reportRow} activeOpacity={0.75} onPress={() => handleReport(reason)}>
                                 <Text style={s.reportRowText}>{reason}</Text>
                                 <Feather name="chevron-right" size={16} color="#CBD5E1" />
                             </TouchableOpacity>
                         ))}
                         <TouchableOpacity style={s.cancelBtn} onPress={() => setReportVisible(false)} activeOpacity={0.8}>
-                            <Text style={s.cancelBtnText}>Cancel</Text>
+                            <Text style={s.cancelBtnText}>{t('user_profile.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
