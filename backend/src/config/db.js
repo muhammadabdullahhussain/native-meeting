@@ -25,7 +25,9 @@ const connectDB = async () => {
             return conn;
         } catch (err) {
             attempt += 1;
-            console.error(`❌ MongoDB Connection Attempt ${attempt} failed:`, err.message);
+            console.error(`❌ MongoDB Connection Attempt ${attempt} failed!`);
+            console.error(`Message: ${err.message}`);
+            console.error(`Code: ${err.code || 'N/A'}`);
             if (attempt < maxRetries) {
                 const wait = 2000 * attempt;
                 console.log(`⏳ Retrying in ${wait / 1000}s...`);
