@@ -272,13 +272,13 @@ export default function InterestManager({ navigation }) {
 
   const filteredCategories = search
     ? categories
-        .map((cat) => ({
-          ...cat,
-          subInterests: cat.subInterests.filter((s) =>
-            s.toLowerCase().includes(search.toLowerCase()),
-          ),
-        }))
-        .filter((cat) => cat.subInterests.length > 0)
+      .map((cat) => ({
+        ...cat,
+        subInterests: cat.subInterests.filter((s) =>
+          s.toLowerCase().includes(search.toLowerCase()),
+        ),
+      }))
+      .filter((cat) => cat.subInterests.length > 0)
     : categories;
 
   return (
@@ -313,17 +313,17 @@ export default function InterestManager({ navigation }) {
       {/* TABS - Modern Pill Style */}
       <View style={styles.tabContainer}>
         <View style={styles.tabsRow}>
-          {["mine", "browse"].map((t) => (
+          {["mine", "browse"].map((tab) => (
             <TouchableOpacity
-              key={t}
-              style={[styles.tab, view === t && styles.tabActive]}
-              onPress={() => setView(t)}
+              key={tab}
+              style={[styles.tab, view === tab && styles.tabActive]}
+              onPress={() => setView(tab)}
               activeOpacity={0.9}
             >
               <Text
-                style={[styles.tabText, view === t && styles.tabTextActive]}
+                style={[styles.tabText, view === tab && styles.tabTextActive]}
               >
-                {t === "mine" ? t("interests_manager.my_interests") : t("interests_manager.browse_all")}
+                {tab === "mine" ? t("interests_manager.my_interests") : t("interests_manager.browse_all")}
               </Text>
             </TouchableOpacity>
           ))}
