@@ -50,11 +50,13 @@ app.use(express.json({ limit: "10kb" }));
 
 app.get("/healthz", (req, res) => {
   const mongoose = require("mongoose");
+  const connectDB = require("./config/db");
   const uri = process.env.MONGO_URI || "MISSING";
   res.status(200).json({
     status: "OK",
     database: mongoose.connection.readyState === 1 ? "Connected" : "Disconnected",
     readyState: mongoose.connection.readyState,
+    lastError: connectDB.getLastError?.() || null,
     uriStart: uri.substring(0, 20) + "...",
     timestamp: new Date()
   });

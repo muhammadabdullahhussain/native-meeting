@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
 
+let lastConnectionError = null;
+
 const connectDB = async () => {
     const uri = process.env.MONGO_URI;
     if (!uri) {
         console.error('❌ MONGO_URI is missing from .env file');
+        lastConnectionError = 'MONGO_URI is missing';
         return;
     }
 
@@ -22,9 +25,11 @@ const connectDB = async () => {
         try {
             const conn = await mongoose.connect(uri, options);
             console.log(`✅ Connected to MongoDB: ${conn.connection.host} / DB: ${conn.connection.name}`);
+            lastConnectionError = null;
             return conn;
         } catch (err) {
             attempt += 1;
+            lastConnectionError = err.message;
             console.error(`❌ MongoDB Connection Attempt ${attempt} failed!`);
             console.error(`Message: ${err.message}`);
             console.error(`Code: ${err.code || 'N/A'}`);
@@ -39,3 +44,4 @@ const connectDB = async () => {
 };
 
 module.exports = connectDB;
+module.exports.getLastError = () => lastConnectionError;
