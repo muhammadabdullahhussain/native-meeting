@@ -92,7 +92,7 @@ export default function Home() {
 
   return (
     <div className="overflow-hidden">
-      <section className="relative min-h-[90vh] flex items-center pt-20">
+      <section className="relative min-h-[85vh] flex items-center pt-16 sm:pt-20">
         <div className="absolute inset-0 z-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-[128px]" />
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px]" />
@@ -113,7 +113,7 @@ export default function Home() {
 
               <motion.h1
                 variants={itemVariants}
-                className="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tight leading-tight"
+                className="text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-6 sm:mb-8 tracking-tight leading-tight"
               >
                 Connect with your <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">
@@ -123,7 +123,7 @@ export default function Home() {
 
               <motion.p
                 variants={itemVariants}
-                className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed"
+                className="text-base sm:text-xl text-gray-400 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2"
               >
                 Discover like-minded people, join local communities, and build
                 real connections. Safe, verified, and hyper-local.
@@ -135,13 +135,13 @@ export default function Home() {
               >
                 <button
                   onClick={openSignUp}
-                  className="w-full sm:w-auto px-8 py-4 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-primary/25"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-4 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-primary/25"
                 >
                   Start Free Today <ArrowRight size={20} />
                 </button>
                 <Link
                   href="/about"
-                  className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl font-semibold text-lg transition-all backdrop-blur-sm"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl font-semibold text-base sm:text-lg transition-all backdrop-blur-sm text-center"
                 >
                   Learn More
                 </Link>
@@ -215,9 +215,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 border-y border-white/5 bg-white/[0.02]">
+      <section className="py-10 sm:py-16 border-y border-white/5 bg-white/[0.02]">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-12 text-center">
             {[
               { label: "Active Users", value: "10k+", icon: Users },
               { label: "Communities", value: "500+", icon: Globe },
@@ -234,7 +234,7 @@ export default function Home() {
                 <div className="flex justify-center mb-4 text-primary/50">
                   <stat.icon size={32} />
                 </div>
-                <div className="text-4xl md:text-5xl font-bold text-white mb-2">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2">
                   {stat.value}
                 </div>
                 <div className="text-sm text-gray-400 uppercase tracking-widest font-medium">
@@ -246,11 +246,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-28">
+      <section className="py-16 sm:py-28">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <div className="text-center mb-10 sm:mb-12">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
                 How BondUs Works
               </h2>
               <p className="text-gray-400 text-lg max-w-2xl mx-auto">
@@ -285,11 +285,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-10">
+      <section className="py-8 sm:py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-white">
+            <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4 mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
                 Loved by Real People
               </h2>
               <div className="inline-flex items-center gap-2 text-amber-300">
@@ -326,29 +326,29 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-32 relative">
+      <section className="py-16 sm:py-32 relative">
         <div className="container mx-auto px-4">
-          <div className="relative rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-primary/20 to-primary/5 border border-white/10 p-12 md:p-24 text-center">
+          <div className="relative rounded-2xl sm:rounded-[2.5rem] overflow-hidden bg-gradient-to-b from-primary/20 to-primary/5 border border-white/10 p-6 sm:p-12 md:p-24 text-center">
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
 
             <div className="relative z-10 max-w-3xl mx-auto">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5 sm:mb-8">
                 Ready to find your circle?
               </h2>
-              <p className="text-xl text-gray-300 mb-12">
+              <p className="text-base sm:text-xl text-gray-300 mb-8 sm:mb-12">
                 Join thousands of people who are discovering new friends and
                 communities every day.
               </p>
               <div className="flex items-center justify-center flex-wrap gap-4">
                 <button
                   onClick={openSignUp}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-white text-bg hover:bg-gray-100 rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-xl shadow-white/10"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 sm:px-8 py-4 bg-white text-bg hover:bg-gray-100 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-105 shadow-xl shadow-white/10"
                 >
                   Get Started for Free <ArrowRight size={20} />
                 </button>
                 <Link
                   href="/pricing"
-                  className="inline-flex items-center gap-2 px-8 py-4 border border-white/20 text-white rounded-xl font-semibold hover:bg-white/10 transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-4 border border-white/20 text-white rounded-xl font-semibold hover:bg-white/10 transition-colors"
                 >
                   <Clock3 size={18} />
                   See Premium Plans

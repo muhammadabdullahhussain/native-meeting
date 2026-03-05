@@ -106,9 +106,9 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="pt-32 pb-20">
+    <div className="pt-24 sm:pt-32 pb-20">
       {/* Header */}
-      <div className="text-center mb-20 px-4">
+      <div className="text-center mb-12 sm:mb-20 px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -116,10 +116,10 @@ export default function Pricing() {
           <div className="inline-block mb-4">
             <span className="text-5xl">👑</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight text-white">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 tracking-tight text-white">
             Go Premium
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-gray-400 max-w-2xl mx-auto px-2">
             Unlock the full BondUs experience — no limits, no restrictions,
             pure connection.
           </p>
@@ -127,19 +127,18 @@ export default function Pricing() {
       </div>
 
       {/* Plans */}
-      <div className="container mx-auto px-4 mb-32">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <div className="container mx-auto px-4 mb-16 sm:mb-32">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-8 max-w-6xl mx-auto">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className={`p-8 rounded-[2rem] relative flex flex-col ${
-                plan.popular
-                  ? "bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 shadow-2xl shadow-primary/10 scale-105 z-10"
+              className={`p-6 sm:p-8 rounded-2xl sm:rounded-[2rem] relative flex flex-col ${plan.popular
+                  ? "bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 shadow-2xl shadow-primary/10 sm:scale-105 z-10"
                   : "bg-white/5 border border-white/10"
-              }`}
+                }`}
             >
               {plan.popular && (
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
@@ -171,11 +170,10 @@ export default function Pricing() {
               </p>
 
               <button
-                className={`w-full py-4 rounded-xl font-bold transition-all mt-auto ${
-                  plan.popular
+                className={`w-full py-4 rounded-xl font-bold transition-all mt-auto ${plan.popular
                     ? "bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/25 hover:scale-105"
                     : "bg-white/10 hover:bg-white/20 text-white"
-                }`}
+                  }`}
               >
                 Choose {plan.label}
               </button>
@@ -215,42 +213,42 @@ export default function Pricing() {
       </div>
 
       {/* Comparison Table */}
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white">Free vs Premium</h2>
+      <div className="container mx-auto px-2 sm:px-4 max-w-4xl">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Free vs Premium</h2>
         </div>
-
-        <div className="glass rounded-3xl overflow-hidden border border-white/10">
-          <div className="grid grid-cols-3 bg-white/5 p-4 border-b border-white/10 font-bold text-white">
-            <div className="pl-4">Feature</div>
-            <div className="text-center text-gray-400">Free</div>
-            <div className="text-center text-primary">Premium</div>
-          </div>
-
-          {comparison.map((row, i) => (
-            <div
-              key={i}
-              className={`grid grid-cols-3 p-4 items-center border-b border-white/5 last:border-0 ${
-                i % 2 === 0 ? "bg-white/[0.02]" : ""
-              }`}
-            >
-              <div className="text-gray-300 pl-4 font-medium text-sm md:text-base">
-                {row.feature}
-              </div>
-              <div className="text-center flex justify-center text-gray-400 font-medium">
-                {row.free === true ? (
-                  <Check size={18} />
-                ) : row.free === false ? (
-                  <X size={18} />
-                ) : (
-                  row.free
-                )}
-              </div>
-              <div className="text-center flex justify-center text-primary font-bold">
-                {row.premium === true ? <Check size={18} /> : row.premium}
-              </div>
+        <div className="overflow-x-auto">
+          <div className="glass rounded-3xl overflow-hidden border border-white/10 min-w-[340px]">
+            <div className="grid grid-cols-3 bg-white/5 p-3 sm:p-4 border-b border-white/10 font-bold text-white">
+              <div className="pl-2 sm:pl-4 text-sm">Feature</div>
+              <div className="text-center text-gray-400 text-sm">Free</div>
+              <div className="text-center text-primary text-sm">Premium</div>
             </div>
-          ))}
+
+            {comparison.map((row, i) => (
+              <div
+                key={i}
+                className={`grid grid-cols-3 p-3 sm:p-4 items-center border-b border-white/5 last:border-0 ${i % 2 === 0 ? "bg-white/[0.02]" : ""
+                  }`}
+              >
+                <div className="text-gray-300 pl-2 sm:pl-4 font-medium text-xs sm:text-sm">
+                  {row.feature}
+                </div>
+                <div className="text-center flex justify-center text-gray-400 font-medium text-xs sm:text-sm">
+                  {row.free === true ? (
+                    <Check size={16} />
+                  ) : row.free === false ? (
+                    <X size={16} />
+                  ) : (
+                    row.free
+                  )}
+                </div>
+                <div className="text-center flex justify-center text-primary font-bold text-xs sm:text-sm">
+                  {row.premium === true ? <Check size={16} /> : row.premium}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mt-12 text-center">

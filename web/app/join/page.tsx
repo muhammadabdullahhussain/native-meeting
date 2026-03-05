@@ -166,7 +166,7 @@ function JoinInner() {
         initial={{ opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="glass max-w-xl w-full p-8 md:p-12 rounded-[2rem] relative z-10 text-center border border-white/10 shadow-2xl shadow-black/50"
+        className="glass max-w-xl w-full p-5 sm:p-8 md:p-12 rounded-[1.5rem] sm:rounded-[2rem] relative z-10 text-center border border-white/10 shadow-2xl shadow-black/50"
       >
         <div className="relative mx-auto mb-8">
           <div className="absolute inset-0 blur-2xl bg-gradient-to-br from-primary/40 to-purple-500/30 rounded-full -z-10" />
@@ -175,7 +175,7 @@ function JoinInner() {
           </div>
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3">
           Join <span className="text-primary">{inviterName}</span> on BondUs
         </h1>
         <p className="text-gray-300/90 mb-6 leading-relaxed">
@@ -188,41 +188,43 @@ function JoinInner() {
         )}
 
         {inviter && (
-          <div className="rounded-2xl p-4 md:p-5 mb-8 bg-white/5 border border-white/10 flex items-center gap-4 text-left">
-            <Image
-              src={
-                inviter.avatar ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(inviter.name)}&background=6366F1&color=fff`
-              }
-              alt={inviter.name}
-              width={64}
-              height={64}
-              sizes="64px"
-              className="w-14 h-14 md:w-16 md:h-16 rounded-xl object-cover border border-white/10"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold">{inviter.name}</span>
-                {inviter.isVerified && (
-                  <ShieldCheck size={16} className="text-emerald-300" />
-                )}
+          <div className="rounded-2xl p-3 sm:p-5 mb-6 sm:mb-8 bg-white/5 border border-white/10 text-left">
+            <div className="flex items-center gap-3">
+              <Image
+                src={
+                  inviter.avatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(inviter.name)}&background=6366F1&color=fff`
+                }
+                alt={inviter.name}
+                width={56}
+                height={56}
+                sizes="56px"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-white/10 flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-base sm:text-lg font-semibold truncate">{inviter.name}</span>
+                  {inviter.isVerified && (
+                    <ShieldCheck size={15} className="text-emerald-300 flex-shrink-0" />
+                  )}
+                </div>
+                <div className="text-xs sm:text-sm text-gray-400 truncate">
+                  {inviter.headline || "Active member"}
+                </div>
               </div>
-              <div className="text-sm text-gray-400 truncate">
-                {inviter.headline || "Active member"}
-              </div>
-              <div className="text-xs text-gray-500 flex items-center gap-2 mt-1">
-                {inviter.city && (
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin size={12} /> {inviter.city}
-                  </span>
-                )}
-                {typeof inviter.referralCount === "number" && (
-                  <span>• {inviter.referralCount} friends invited</span>
-                )}
-                {typeof inviter.unlockedGroupPasses === "number" && (
-                  <span>• {inviter.unlockedGroupPasses} group passes</span>
-                )}
-              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-gray-500">
+              {inviter.city && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin size={11} /> {inviter.city}
+                </span>
+              )}
+              {typeof inviter.referralCount === "number" && (
+                <span>• {inviter.referralCount} friends invited</span>
+              )}
+              {typeof inviter.unlockedGroupPasses === "number" && (
+                <span>• {inviter.unlockedGroupPasses} group passes</span>
+              )}
             </div>
           </div>
         )}
@@ -237,7 +239,7 @@ function JoinInner() {
                 <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                   Referral Code
                 </div>
-                <div className="font-mono text-xl md:text-2xl font-bold tracking-[0.3em] text-white select-text">
+                <div className="font-mono text-lg sm:text-xl md:text-2xl font-bold tracking-[0.2em] sm:tracking-[0.3em] text-white select-text">
                   {code}
                 </div>
               </div>
