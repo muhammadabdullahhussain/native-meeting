@@ -26,6 +26,7 @@ import { ModernPlaceholder } from "../../components/common/ModernPlaceholder";
 import { EmptyState } from "../../components/common/EmptyState";
 import PremiumModal from "../../components/PremiumModal";
 import PremiumBadge from "../../components/PremiumBadge";
+import { useTranslation } from "react-i18next";
 import { Share, Clipboard } from "react-native";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -45,6 +46,7 @@ export default function Connections({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { showToast, confirmAction } = useToast();
   const { on } = useSocket();
+  const { t } = useTranslation();
 
   // Cascading ID check for React keys
   const getSafeId = (item, suffix = "") => {
@@ -108,7 +110,7 @@ export default function Connections({ navigation, route }) {
       const formattedFriends = friendsData.map((f) => ({
         id: f.connectionId, // ← was f._id (undefined). API returns connectionId
         user: f.user,
-        lastMessage: f.lastMessage?.text || "Say hello! 👋",
+        lastMessage: f.lastMessage?.text || t("connections.chat.say_hello"),
         timestamp: f.lastMessage?.createdAt
           ? new Date(f.lastMessage.createdAt).toLocaleTimeString([], {
             hour: "2-digit",
@@ -125,7 +127,7 @@ export default function Connections({ navigation, route }) {
       const formattedGroups = myGroupsData.map((g) => ({
         id: g._id,
         user: { name: g.name, avatar: g.emoji || "👥" },
-        lastMessage: "Group Chat",
+        lastMessage: t("connections.chat.group_chat"),
         timestamp: "",
         unreadCount: 0,
         type: "group",
@@ -170,7 +172,7 @@ export default function Connections({ navigation, route }) {
       setRequestedGroups(pendingGroupIds);
     } catch (err) {
       console.error("[Connections] Fetch Error:", err);
-      showToast("Error", "Failed to load connections", "error");
+      showToast(t("common.error"), t("connections.fetch_error", "Failed to load connections"), "error");
     } finally {
       setIsLoading(false);
     }
@@ -286,8 +288,8 @@ export default function Connections({ navigation, route }) {
   const blockUser = () => {
     if (!selectedChat) return;
     confirmAction({
-      title: "Block User? 🚫",
-      message: `Are you sure you want to block ${selectedChat.user.name}? They won't be able to message you or see your profile.`,
+      title: t("connections.block_user.title"),
+      message: t("connections.block_user.message", { name: selectedChat.user.name }),
       onConfirm: async () => {
         try {
           const blockId = selectedChat.user._id || selectedChat.user.id;
@@ -296,16 +298,16 @@ export default function Connections({ navigation, route }) {
           setChats((c) => c.filter((x) => x.id !== selectedChat.id));
           setChatOptionsVisible(false);
           showToast(
-            "User Blocked",
-            `${selectedChat.user.name} has been restricted.`,
+            t("connections.block_user.success_title"),
+            t("connections.block_user.success_msg", { name: selectedChat.user.name }),
             "success",
           );
           fetchData();
         } catch (err) {
-          showToast("Error", err.message || "Failed to block user", "error");
+          showToast(t("common.error"), err.message || t("connections.block_user.failed"), "error");
         }
       },
-      confirmText: "Block",
+      confirmText: t("connections.chat.block"),
       confirmStyle: "destructive",
     });
   };
@@ -314,29 +316,29 @@ export default function Connections({ navigation, route }) {
     try {
       await authService.resolveConnectionRequest(req._id, "accepted");
       showToast(
-        "✅ Accepted!",
-        `You are now connected with ${req.requester.name}.`,
+        t("connections.request.accepted_toast"),
+        t("connections.request.connected_with", { name: req.requester.name }),
         "success",
       );
       fetchData();
     } catch (err) {
-      showToast("Error", "Failed to accept request", "error");
+      showToast(t("common.error"), t("connections.request.failed_accept", "Failed to accept request"), "error");
     }
   };
 
   const declineRequest = async (req) => {
     confirmAction({
-      title: "Decline Request?",
-      message: `Remove the message request from ${req.requester.name}?`,
+      title: t("connections.decline_request.title"),
+      message: t("connections.decline_request.message", { name: req.requester.name }),
       onConfirm: async () => {
         try {
           await authService.resolveConnectionRequest(req._id, "rejected");
           fetchData();
         } catch (err) {
-          showToast("Error", "Failed to decline request", "error");
+          showToast(t("common.error"), t("connections.request.failed_decline", "Failed to decline request"), "error");
         }
       },
-      confirmText: "Decline",
+      confirmText: t("connections.chat.decline", "Decline"),
       confirmStyle: "destructive",
     });
   };
@@ -345,8 +347,8 @@ export default function Connections({ navigation, route }) {
     try {
       await authService.joinGroup(groupId);
       showToast(
-        "Request Sent! ✉️",
-        "Your request to join the group has been sent.",
+        t("discover.request_sent"),
+        t("connections.request.join_sent_msg", "Your request to join the group has been sent."),
         "success",
       );
       const me = await authService.getMe();
@@ -375,11 +377,11 @@ export default function Connections({ navigation, route }) {
 
   const createGroup = async () => {
     if (!groupName.trim()) {
-      showToast("Group Name", "Please enter a group name.", "info");
+      showToast(t("connections.create_group.title"), t("connections.create_group.name_required"), "info");
       return;
     }
     if (selectedGroupMembers.length < 1) {
-      showToast("Add Members", "Add at least one member.", "info");
+      showToast(t("connections.create_group.title"), t("connections.create_group.member_required"), "info");
       return;
     }
 
@@ -396,12 +398,12 @@ export default function Connections({ navigation, route }) {
         setShowCreateGroup(false);
         setGroupName("");
         setSelectedGroupMembers([]);
-        showToast("Success! 🚀", "Group created successfully", "success");
+        showToast(t("connections.create_group.success_title"), t("connections.create_group.success_msg"), "success");
         fetchData();
         navigation.navigate("GroupChat", { group: response.data });
       }
     } catch (err) {
-      showToast("Error", err.message || "Failed to create group", "error");
+      showToast(t("common.error"), err.message || t("connections.create_group.failed"), "error");
     }
   };
 
@@ -412,16 +414,16 @@ export default function Connections({ navigation, route }) {
         await Clipboard.setString(inviteUrl);
       } else {
         await Share.share({
-          message: `Hey! Join me on BondUs to find people with shared interests. Use my link: ${inviteUrl}`,
+          message: t("connections.invite.share_msg", { url: inviteUrl }),
         });
       }
       showToast(
-        "Invite Link Copied!",
-        "Share this with your friends.",
+        t("connections.invite.copied_title"),
+        t("connections.invite.copied_msg"),
         "success",
       );
     } catch (err) {
-      showToast("Error", "Failed to share invite link", "error");
+      showToast(t("common.error"), t("connections.invite.failed_share", "Failed to share invite link"), "error");
     }
   };
 
@@ -450,9 +452,9 @@ export default function Connections({ navigation, route }) {
     const isUnread = item.unreadCount > 0;
     const isGroup = item.type === "group";
     const name =
-      item.user?.name || (isGroup ? item.groupData?.name : "Unknown");
+      item.user?.name || (isGroup ? item.groupData?.name : t("connections.chat.unknown"));
     const lastMsg =
-      item.lastMessage || (isGroup ? "No messages yet" : "Say hello! 👋");
+      item.lastMessage || (isGroup ? t("connections.chat.group_chat") : t("connections.chat.say_hello"));
     const tags = item.user?.interests || [];
 
     return (
@@ -502,7 +504,7 @@ export default function Connections({ navigation, route }) {
             >
               {name}
             </Text>
-            <Text style={s.chatTime}>{item.timestamp || "Now"}</Text>
+            <Text style={s.chatTime}>{item.timestamp || t("connections.chat.now")}</Text>
           </View>
 
           <View style={s.chatBottomRow}>
@@ -566,7 +568,7 @@ export default function Connections({ navigation, route }) {
               style={{ marginRight: 3 }}
             />
             <Text style={s.reqInterestText}>
-              {sharedInterests.length} shared
+              {sharedInterests.length} {t("connections.chat.shared")}
             </Text>
           </View>
         </View>
@@ -574,7 +576,7 @@ export default function Connections({ navigation, route }) {
         {/* Message preview */}
         <View style={s.reqMessageBubble}>
           <Text style={s.reqMessageText}>
-            {item.message || "Hey, let's connect!"}
+            {item.message || t("connections.request.incoming_msg")}
           </Text>
         </View>
 
@@ -600,7 +602,7 @@ export default function Connections({ navigation, route }) {
               color="#64748B"
               style={{ marginRight: 6 }}
             />
-            <Text style={s.declineBtnText}>Decline</Text>
+            <Text style={s.declineBtnText}>{t("connections.request.decline")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={s.acceptBtn}
@@ -619,7 +621,7 @@ export default function Connections({ navigation, route }) {
                 color="#FFF"
                 style={{ marginRight: 6 }}
               />
-              <Text style={s.acceptBtnText}>Accept</Text>
+              <Text style={s.acceptBtnText}>{t("connections.request.accept")}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -644,7 +646,7 @@ export default function Connections({ navigation, route }) {
         {/* Creator premium badge */}
         {item.creatorPremium && (
           <View style={s.premiumGroupBadge}>
-            <Text style={s.premiumGroupBadgeText}>👑 Premium Group</Text>
+            <Text style={s.premiumGroupBadgeText}>{t("connections.group.premium_badge")}</Text>
           </View>
         )}
 
@@ -659,9 +661,9 @@ export default function Connections({ navigation, route }) {
               <Feather name="users" size={11} color="#94A3B8" />
               <Text style={s.groupMemberCount}>
                 {" "}
-                {item.members?.length || 0}/{item.maxMembers || 50} members
+                {t("connections.group.members_count", { count: item.members?.length || 0, max: item.maxMembers || 50 })}
               </Text>
-              {isFull && <Text style={s.groupFullBadge}> · Full</Text>}
+              {isFull && <Text style={s.groupFullBadge}>{t("connections.group.full_badge")}</Text>}
             </View>
           </View>
           {isMatched && (
@@ -693,7 +695,7 @@ export default function Connections({ navigation, route }) {
               color="#22C55E"
               style={{ marginRight: 6 }}
             />
-            <Text style={s.requestedBadgeText}>Joined</Text>
+            <Text style={s.requestedBadgeText}>{t("connections.group.joined")}</Text>
           </View>
         ) : hasRequested ? (
           <View style={s.requestedBadge}>
@@ -703,7 +705,7 @@ export default function Connections({ navigation, route }) {
               color="#6366F1"
               style={{ marginRight: 6 }}
             />
-            <Text style={s.requestedBadgeText}>Request Pending</Text>
+            <Text style={s.requestedBadgeText}>{t("connections.group.pending")}</Text>
           </View>
         ) : (
           <TouchableOpacity
@@ -725,7 +727,7 @@ export default function Connections({ navigation, route }) {
                 style={{ marginRight: 7 }}
               />
               <Text style={s.joinBtnText}>
-                {isFull ? "Group Full" : "Request to Join"}
+                {isFull ? t("connections.group.full") : t("connections.group.request_join")}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -765,10 +767,9 @@ export default function Connections({ navigation, route }) {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={s.referralTitle}>Unlock Group Discovery 🎁</Text>
+              <Text style={s.referralTitle}>{t("connections.referral.unlock_title")}</Text>
               <Text style={s.referralSub}>
-                Invite 3 friends and get access to browse all groups and send 1
-                join request — for free!
+                {t("connections.referral.unlock_sub")}
               </Text>
 
               {/* Progress dots */}
@@ -790,7 +791,7 @@ export default function Connections({ navigation, route }) {
                 ))}
               </View>
               <Text style={s.referralProgressText}>
-                {inviteCount % 3}/3 for next Group Pass
+                {t("connections.referral.progress_text", { count: inviteCount % 3 })}
               </Text>
 
               <TouchableOpacity
@@ -804,13 +805,13 @@ export default function Connections({ navigation, route }) {
                   color="#6366F1"
                   style={{ marginRight: 8 }}
                 />
-                <Text style={s.referralInviteBtnText}>Invite a Friend</Text>
+                <Text style={s.referralInviteBtnText}>{t("connections.referral.invite_btn")}</Text>
               </TouchableOpacity>
             </LinearGradient>
           </View>
 
           {/* Preview (blurred effect) */}
-          <Text style={s.sectionLabel}>Groups You Might Like</Text>
+          <Text style={s.sectionLabel}>{t("connections.group.explore_communities")}</Text>
           {groups.length > 0 ? (
             groups.slice(0, 3).map((g) => (
               <View
@@ -838,8 +839,8 @@ export default function Connections({ navigation, route }) {
             <EmptyState
               compact
               icon="users"
-              title="No groups available"
-              description="Check back later for new communities."
+              title={t("connections.group.no_groups_title")}
+              description={t("connections.group.no_groups_desc")}
             />
           )}
 
@@ -856,7 +857,7 @@ export default function Connections({ navigation, route }) {
               style={s.premiumGroupCtaGrad}
             >
               <Text style={s.premiumGroupCtaText}>
-                👑 Go Premium for unlimited group access → $3.99/mo
+                {t("connections.group.go_premium_banner")}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -885,14 +886,14 @@ export default function Connections({ navigation, route }) {
             />
             <View style={{ flex: 1 }}>
               <Text style={s.referralUnlockedTitle}>
-                🎉 Groups Unlocked via Referral!
+                {t("connections.referral.unlocked_title")}
               </Text>
               <Text style={s.referralUnlockedSub}>
-                You can join up to 1 group for free. Upgrade for unlimited.
+                {t("connections.referral.unlocked_sub")}
               </Text>
             </View>
             <TouchableOpacity onPress={() => navigation.navigate("Premium")}>
-              <Text style={s.referralUnlockedUpgrade}>Upgrade</Text>
+              <Text style={s.referralUnlockedUpgrade}>{t("connections.referral.upgrade")}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -901,10 +902,10 @@ export default function Connections({ navigation, route }) {
         {joinedGroups.length > 0 && (
           <>
             <View style={s.sectionHeaderRow}>
-              <Text style={s.sectionLabel}>My Groups</Text>
+              <Text style={s.sectionLabel}>{t("connections.group.my_groups")}</Text>
               {isPremium && (
                 <TouchableOpacity onPress={() => setShowCreateGroup(true)}>
-                  <Text style={s.sectionActionText}>+ Create</Text>
+                  <Text style={s.sectionActionText}>{t("connections.group.create")}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -920,7 +921,7 @@ export default function Connections({ navigation, route }) {
         {/* My interest-matched groups */}
         {myMatchedGroups.length > 0 && (
           <>
-            <Text style={s.sectionLabel}>✨ Matching Your Interests</Text>
+            <Text style={s.sectionLabel}>{t("connections.group.matching_interests")}</Text>
             <FlatList
               data={myMatchedGroups}
               keyExtractor={(g) => g._id || g.id}
@@ -933,7 +934,7 @@ export default function Connections({ navigation, route }) {
         {/* All other groups */}
         {otherGroups.length > 0 && (
           <>
-            <Text style={s.sectionLabel}>Explore Communities</Text>
+            <Text style={s.sectionLabel}>{t("connections.group.explore_communities")}</Text>
             <FlatList
               data={otherGroups}
               keyExtractor={(g) => g._id || g.id}
@@ -946,9 +947,9 @@ export default function Connections({ navigation, route }) {
         {!hasData && (
           <EmptyState
             icon="users"
-            title="No groups found"
-            description="Be the first to create a community around your interests!"
-            actionLabel={isPremium ? "Create Group" : "Go Premium"}
+            title={t("connections.empty.no_convos_title")}
+            description={t("connections.group.be_first_desc")}
+            actionLabel={isPremium ? t("connections.group.create_group_btn") : t("connections.group.go_premium_btn")}
             onAction={() =>
               isPremium
                 ? setShowCreateGroup(true)
@@ -971,7 +972,7 @@ export default function Connections({ navigation, route }) {
               style={s.premiumGroupCtaGrad}
             >
               <Text style={s.premiumGroupCtaText}>
-                👑 Premium: Make your group discoverable by interest → $3.99/mo
+                {t("connections.group.premium_create_banner")}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -1013,9 +1014,9 @@ export default function Connections({ navigation, route }) {
       return (
         <EmptyState
           icon="map-pin"
-          title="No one nearby"
-          description="Try increasing your search radius in Discover."
-          actionLabel="Go to Discover"
+          title={t("connections.people_nearby")}
+          description={t("connections.expand_radius_desc")}
+          actionLabel={t("discover.title")}
           onAction={() => navigation.navigate("Explore")}
         />
       );
@@ -1046,7 +1047,7 @@ export default function Connections({ navigation, route }) {
             <View style={s.userInfo}>
               <Text style={s.userName}>{item.name}</Text>
               <Text style={s.userDist}>
-                {item.distanceKm ? `${item.distanceKm} km away` : "Nearby"}
+                {item.distanceKm ? `${item.distanceKm} km ${t("connections.chat.shared").split(" ")[0]}` : t("connections.chat.nearby", "Nearby")}
               </Text>
             </View>
             <Feather name="chevron-right" size={18} color="#94A3B8" />
@@ -1057,10 +1058,10 @@ export default function Connections({ navigation, route }) {
   };
 
   const TABS = [
-    { id: "Messages", label: "Messages", badge: totalUnread },
-    { id: "Requests", label: "Requests", badge: requests.length },
-    { id: "Groups", label: "Groups", badge: myJoinedGroups?.length || 0 },
-    { id: "People", label: "People", badge: 0 },
+    { id: "Messages", label: t("connections.tabs.messages"), badge: totalUnread },
+    { id: "Requests", label: t("connections.tabs.requests"), badge: requests.length },
+    { id: "Groups", label: t("connections.tabs.groups"), badge: myJoinedGroups?.length || 0 },
+    { id: "People", label: t("connections.tabs.people"), badge: 0 },
   ];
 
   return (
@@ -1073,10 +1074,10 @@ export default function Connections({ navigation, route }) {
       >
         <View style={s.headerTop}>
           <View>
-            <Text style={s.headerTitle}>Messages</Text>
+            <Text style={s.headerTitle}>{t("connections.title")}</Text>
             <Text style={s.headerSub}>
-              {chats.length}/30 conversations
-              {totalUnread > 0 ? ` · ${totalUnread} unread` : ""}
+              {t("connections.subtitle", { count: chats.length })}
+              {totalUnread > 0 ? t("connections.unread_suffix", { count: totalUnread }) : ""}
             </Text>
           </View>
           <View style={s.headerBtns}>
@@ -1104,7 +1105,7 @@ export default function Connections({ navigation, route }) {
                 style={s.composeBtnGrad}
               >
                 <Feather name="edit" size={15} color="#FFF" />
-                <Text style={s.composeBtnText}>New</Text>
+                <Text style={s.composeBtnText}>{t("connections.new_btn")}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -1127,8 +1128,8 @@ export default function Connections({ navigation, route }) {
             >
               <Text style={s.limitBannerText}>
                 {isAtLimit
-                  ? "🚫 30/30 limit reached. Go Premium for unlimited!"
-                  : `⚡ ${chats.length}/30 used. Upgrade for unlimited.`}
+                  ? t("connections.limit_reached", "🚫 30/30 limit reached. Go Premium for unlimited!")
+                  : t("connections.limit_usage", { count: chats.length, total: 30 }, "⚡ {{count}}/{{total}} used. Upgrade for unlimited.")}
               </Text>
               <Feather name="chevron-right" size={14} color="#FFF" />
             </LinearGradient>
@@ -1145,7 +1146,7 @@ export default function Connections({ navigation, route }) {
           />
           <TextInput
             style={s.searchInput}
-            placeholder="Search..."
+            placeholder={t("connections.search_placeholder")}
             placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -1202,7 +1203,7 @@ export default function Connections({ navigation, route }) {
         >
           {/* People Nearby Strip */}
           <View style={s.suggestSection}>
-            <Text style={s.suggestLabel}>People Nearby</Text>
+            <Text style={s.suggestLabel}>{t("connections.people_nearby")}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -1236,7 +1237,7 @@ export default function Connections({ navigation, route }) {
                       {u.name.split(" ")[0]}
                     </Text>
                     <Text style={s.suggestDist}>
-                      {u.distanceKm ? `${u.distanceKm} km` : "Nearby"}
+                      {u.distanceKm ? `${u.distanceKm} km` : t("connections.chat.nearby", "Nearby")}
                     </Text>
                   </TouchableOpacity>
                 ))
@@ -1244,9 +1245,9 @@ export default function Connections({ navigation, route }) {
                 <EmptyState
                   compact
                   icon="radio"
-                  title="No one nearby"
-                  description="Expand your radius to find people"
-                  actionLabel="Discover"
+                  title={t("connections.no_one_nearby")}
+                  description={t("connections.expand_radius_desc")}
+                  actionLabel={t("discover.title")}
                   onAction={() => navigation.navigate("Discover")}
                   style={{ width: SCREEN_WIDTH - 40, marginHorizontal: 2 }}
                 />
@@ -1268,13 +1269,13 @@ export default function Connections({ navigation, route }) {
                     filterMode === f && s.filterChipTextActive,
                   ]}
                 >
-                  {f}
+                  {t(`connections.filter.${f.toLowerCase()}`)}
                 </Text>
               </TouchableOpacity>
             ))}
             <View style={{ flex: 1 }} />
             <Text style={s.filterCount}>
-              {filteredChats([...pinnedList, ...unpinnedList]).length} chats
+              {t("connections.filter.chats_count", { count: filteredChats([...pinnedList, ...unpinnedList]).length })}
             </Text>
           </View>
 
@@ -1295,7 +1296,7 @@ export default function Connections({ navigation, route }) {
                       color="#94A3B8"
                       style={{ marginRight: 6 }}
                     />
-                    <Text style={s.sectionDividerText}>PINNED</Text>
+                    <Text style={s.sectionDividerText}>{t("connections.section.pinned")}</Text>
                   </View>
                   {filteredChats(pinnedList).map((item, i) => (
                     <View key={getSafeId(item, `pin-${i}`)}>
@@ -1306,7 +1307,7 @@ export default function Connections({ navigation, route }) {
               )}
 
               <View style={s.sectionDivider}>
-                <Text style={s.sectionDividerText}>ALL MESSAGES</Text>
+                <Text style={s.sectionDividerText}>{t("connections.section.all_messages")}</Text>
               </View>
 
               {filteredChats(unpinnedList).map((item, i) => (
@@ -1318,9 +1319,9 @@ export default function Connections({ navigation, route }) {
               {filteredChats(chats).length === 0 && (
                 <EmptyState
                   icon="message-circle"
-                  title="No conversations yet"
-                  description="Connect with people to start meaningful conversations."
-                  actionLabel="Find People to Chat"
+                  title={t("connections.empty.no_convos_title")}
+                  description={t("connections.empty.no_convos_desc")}
+                  actionLabel={t("connections.empty.find_people_btn")}
                   onAction={() => navigation.navigate("Discover")}
                 />
               )}
@@ -1350,9 +1351,9 @@ export default function Connections({ navigation, route }) {
               ListEmptyComponent={() => (
                 <EmptyState
                   icon="inbox"
-                  title="No pending requests"
-                  description="When someone messages you for the first time, it'll appear here."
-                  actionLabel="Discover People"
+                  title={t("connections.empty.no_requests_title")}
+                  description={t("connections.empty.no_requests_desc")}
+                  actionLabel={t("connections.empty.discover_people_btn")}
                   onAction={() => navigation.navigate("Discover")}
                 />
               )}
@@ -1399,7 +1400,7 @@ export default function Connections({ navigation, route }) {
                   </View>
                   <View style={s.peopleBody}>
                     <Text style={s.peopleName}>{item.name}</Text>
-                    <Text style={s.peopleCity}>{item.city || "Nearby"}</Text>
+                    <Text style={s.peopleCity}>{item.city || t("connections.chat.nearby", "Nearby")}</Text>
                     {common.length > 0 && (
                       <View style={s.sharedRow}>
                         <Feather name="zap" size={10} color="#6366F1" />
@@ -1431,9 +1432,9 @@ export default function Connections({ navigation, route }) {
             ListEmptyComponent={() => (
               <EmptyState
                 icon="users"
-                title="No one nearby yet"
-                description="Looks like there's no one online in your immediate vicinity. Try expanding your search!"
-                actionLabel="Explore More People"
+                title={t("connections.empty.no_one_nearby_title")}
+                description={t("connections.empty.no_one_nearby_desc")}
+                actionLabel={t("connections.empty.explore_more_btn")}
                 onAction={() => navigation.navigate("Discover")}
               />
             )}
@@ -1501,7 +1502,7 @@ export default function Connections({ navigation, route }) {
               >
                 <Feather name={opt.icon} size={18} color={opt.color} />
                 <Text style={[s.optionLabel, { color: opt.color }]}>
-                  {opt.label}
+                  {t(`connections.chat.${opt.label.toLowerCase()}`)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -1509,7 +1510,7 @@ export default function Connections({ navigation, route }) {
               style={s.optionsCancelBtn}
               onPress={() => setChatOptionsVisible(false)}
             >
-              <Text style={s.optionsCancelText}>Cancel</Text>
+              <Text style={s.optionsCancelText}>{t("connections.chat.cancel")}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -1535,7 +1536,7 @@ export default function Connections({ navigation, route }) {
           <View style={s.sheet}>
             <View style={s.sheetHandle} />
             <View style={s.sheetTitleRow}>
-              <Text style={s.sheetTitle}>New Group Chat</Text>
+              <Text style={s.sheetTitle}>{t("connections.create_group.title")}</Text>
               <TouchableOpacity
                 onPress={() => {
                   setShowCreateGroup(false);
@@ -1562,8 +1563,7 @@ export default function Connections({ navigation, route }) {
                   style={s.premiumModalBannerGrad}
                 >
                   <Text style={s.premiumModalBannerText}>
-                    👑 Premium: Make your group publicly discoverable by
-                    interest → $3.99/mo
+                    {t("connections.group.premium_create_banner")}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -1577,7 +1577,7 @@ export default function Connections({ navigation, route }) {
               />
               <TextInput
                 style={s.groupNameInput}
-                placeholder="Group name (e.g. Chess Masters ♟️)"
+                placeholder={t("connections.create_group.name_placeholder")}
                 placeholderTextColor="#94A3B8"
                 value={groupName}
                 onChangeText={setGroupName}
@@ -1585,7 +1585,7 @@ export default function Connections({ navigation, route }) {
               />
             </View>
             <Text style={s.membersLabel}>
-              Add Members ({selectedGroupMembers.length} selected)
+              {t("connections.create_group.members_label", { count: selectedGroupMembers.length })}
             </Text>
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -1620,7 +1620,7 @@ export default function Connections({ navigation, route }) {
                         <Text style={s.memberRowName}>{u.name}</Text>
                         <Text style={s.memberRowSub} numberOfLines={1}>
                           {u.interests?.slice(0, 3).join(" · ") ||
-                            "No interests shared"}
+                            t("connections.create_group.no_interests", "No interests shared")}
                         </Text>
                       </View>
                       <View
@@ -1639,7 +1639,7 @@ export default function Connections({ navigation, route }) {
                       fontFamily: theme.typography.fontFamily.medium,
                     }}
                   >
-                    No connections found to add.
+                    {t("connections.create_group.no_connections")}
                   </Text>
                 </View>
               )}
@@ -1666,7 +1666,7 @@ export default function Connections({ navigation, route }) {
                   color="#FFF"
                   style={{ marginRight: 8 }}
                 />
-                <Text style={s.createGroupText}>Create Group</Text>
+                <Text style={s.createGroupText}>{t("connections.group.create_group_btn")}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>

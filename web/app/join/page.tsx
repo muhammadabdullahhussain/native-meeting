@@ -38,13 +38,8 @@ function JoinInner() {
   const [error, setError] = useState<string | null>(null);
 
   const apiBase = useMemo(() => {
-    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
-    if (envBase) return envBase;
-    if (typeof window !== "undefined") {
-      const host = window.location.hostname;
-      if (host === "localhost" || host === "127.0.0.1") {
-        return "http://localhost:5001";
-      }
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
     }
     return "https://bondus-backend.onrender.com";
   }, []);

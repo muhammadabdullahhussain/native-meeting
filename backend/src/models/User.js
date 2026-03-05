@@ -156,6 +156,9 @@ const userSchema = new mongoose.Schema({
             email: { type: Boolean, default: false },
             messages: { type: Boolean, default: true },
             connections: { type: Boolean, default: true },
+        },
+        privacy: {
+            showOnlineStatus: { type: Boolean, default: true },
         }
     }
 }, {

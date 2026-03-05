@@ -12,6 +12,7 @@ const connectionRoutes = require("./api/routes/connections");
 const messageRoutes = require("./api/routes/messages");
 const notificationRoutes = require("./api/routes/notifications");
 const interestRoutes = require("./api/routes/interests");
+const locationRoutes = require("./api/routes/location");
 const errorMiddleware = require("./api/middleware/errorMiddleware");
 
 const app = express();
@@ -72,6 +73,7 @@ app.use("/api/connections", connectionRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/interests", interestRoutes);
+app.use("/api/location", locationRoutes);
 
 // ─── ROOT REDIRECT ───────────────────────────────────────────────────────────
 

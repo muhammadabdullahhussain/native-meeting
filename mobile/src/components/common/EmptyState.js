@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../theme/theme';
@@ -86,11 +86,20 @@ const styles = StyleSheet.create({
         borderRadius: 60,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-        elevation: 5,
+        ...Platform.select({
+            ios: {
+                shadowColor: theme.colors.primary,
+                shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.1,
+                shadowRadius: 20,
+            },
+            android: {
+                elevation: 5,
+            },
+            web: {
+                boxShadow: `0 10px 20px -5px ${theme.colors.primary}20`,
+            }
+        }),
         zIndex: 2,
     },
     decoration1: {
@@ -133,11 +142,20 @@ const styles = StyleSheet.create({
         paddingHorizontal: 28,
         paddingVertical: 14,
         borderRadius: 20,
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
+        ...Platform.select({
+            ios: {
+                shadowColor: theme.colors.primary,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 4,
+            },
+            web: {
+                boxShadow: `0 4px 12px ${theme.colors.primary}40`,
+            }
+        }),
     },
     actionText: {
         color: '#FFFFFF',

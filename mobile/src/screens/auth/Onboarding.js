@@ -7,44 +7,46 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../theme/theme';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
-const SLIDES = [
-    {
-        id: '1',
-        emoji: '🌍',
-        title: 'Meet People\nNearby',
-        subtitle: 'Discover real people just around the corner who share your passions — not strangers online.',
-        gradient: ['#0F172A', '#1D3461', '#6366F1'],
-        accent: '#818CF8',
-        features: ['Location-based discovery', 'See who\'s online now', 'Up to 25 km radius'],
-    },
-    {
-        id: '2',
-        emoji: '⚡',
-        title: 'Connect Over\nShared Interests',
-        subtitle: 'Choose from 200+ interests — from Chess to Startups, Coffee to Jazz. Your vibe finds your tribe.',
-        gradient: ['#1E1B4B', '#312E81', '#7C3AED'],
-        accent: '#A78BFA',
-        features: ['200+ interests to choose from', 'Smart match scoring', 'Interest-based groups'],
-    },
-    {
-        id: '3',
-        emoji: '🔒',
-        title: 'Safe &\nRespectful',
-        subtitle: 'Messages need acceptance before becoming conversations. You control who enters your world.',
-        gradient: ['#0C4A6E', '#075985', '#0EA5E9'],
-        accent: '#7DD3FC',
-        features: ['Message request system', 'Block & report users', '30-conversation limit (free)'],
-    },
-];
-
 export default function Onboarding({ navigation }) {
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const [currentIndex, setCurrentIndex] = useState(0);
     const flatListRef = useRef(null);
     const scrollX = useRef(new Animated.Value(0)).current;
+
+    const SLIDES = [
+        {
+            id: '1',
+            emoji: '🌍',
+            title: t('onboarding.slide1_title'),
+            subtitle: t('onboarding.slide1_sub'),
+            gradient: ['#0F172A', '#1D3461', '#6366F1'],
+            accent: '#818CF8',
+            features: [t('onboarding.slide1_f1'), t('onboarding.slide1_f2'), t('onboarding.slide1_f3')],
+        },
+        {
+            id: '2',
+            emoji: '⚡',
+            title: t('onboarding.slide2_title'),
+            subtitle: t('onboarding.slide2_sub'),
+            gradient: ['#1E1B4B', '#312E81', '#7C3AED'],
+            accent: '#A78BFA',
+            features: [t('onboarding.slide2_f1'), t('onboarding.slide2_f2'), t('onboarding.slide2_f3')],
+        },
+        {
+            id: '3',
+            emoji: '🔒',
+            title: t('onboarding.slide3_title'),
+            subtitle: t('onboarding.slide3_sub'),
+            gradient: ['#0C4A6E', '#075985', '#0EA5E9'],
+            accent: '#7DD3FC',
+            features: [t('onboarding.slide3_f1'), t('onboarding.slide3_f2'), t('onboarding.slide3_f3')],
+        },
+    ];
 
     const handleNext = () => {
         if (currentIndex < SLIDES.length - 1) {
@@ -70,7 +72,7 @@ export default function Onboarding({ navigation }) {
                     style={[s.skipBtn, { top: insets.top + 12 }]}
                     onPress={handleSkip} activeOpacity={0.7}
                 >
-                    <Text style={s.skipText}>Skip</Text>
+                    <Text style={s.skipText}>{t('onboarding.skip')}</Text>
                     <Feather name="chevron-right" size={14} color="rgba(255,255,255,0.6)" />
                 </TouchableOpacity>
             )}
@@ -101,7 +103,6 @@ export default function Onboarding({ navigation }) {
         </LinearGradient>
     );
 
-    const slide = SLIDES[currentIndex];
     const isLast = currentIndex === SLIDES.length - 1;
 
     return (
@@ -144,7 +145,7 @@ export default function Onboarding({ navigation }) {
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                         style={s.ctaGrad}
                     >
-                        <Text style={s.ctaText}>{isLast ? 'Get Started' : 'Continue'}</Text>
+                        <Text style={s.ctaText}>{isLast ? t('onboarding.get_started') : t('onboarding.continue')}</Text>
                         <Feather name={isLast ? 'arrow-right' : 'chevron-right'} size={18} color="#FFF" />
                     </LinearGradient>
                 </TouchableOpacity>
@@ -152,7 +153,7 @@ export default function Onboarding({ navigation }) {
                 {/* Already have account */}
                 {isLast && (
                     <TouchableOpacity onPress={() => navigation.replace('Login')} style={s.loginLink} activeOpacity={0.7}>
-                        <Text style={s.loginLinkText}>Already have an account? <Text style={s.loginLinkBold}>Log in</Text></Text>
+                        <Text style={s.loginLinkText}>{t('onboarding.already_account')}<Text style={s.loginLinkBold}>{t('onboarding.login')}</Text></Text>
                     </TouchableOpacity>
                 )}
             </View>

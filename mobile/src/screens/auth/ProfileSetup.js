@@ -17,14 +17,17 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import * as Location from "expo-location";
 import * as Haptics from "expo-haptics";
 import { theme } from "../../theme/theme";
+import { API_BASE_URL } from "../../config";
 import { INTEREST_CATEGORIES } from "../../data/interests";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../context/AuthContext";
 import { authService } from "../../api/authService";
 import { useToast } from "../../context/ToastContext";
+import LocationAutocomplete from "../../components/common/LocationAutocomplete";
 
 const LOOKING_FOR_OPTIONS = [
   { label: "Coffee Chat", emoji: "☕" },
@@ -45,13 +48,14 @@ if (
 }
 
 export default function ProfileSetup({ navigation, route }) {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const { showToast } = useToast();
   const insets = useSafeAreaInsets();
   const passedName = route?.params?.name || "";
   const passedReferralCode = route?.params?.referralCode || "";
 
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(1);
   const [name, setName] = useState(passedName);
   const [bio, setBio] = useState("");
   const [city, setCity] = useState("");
@@ -99,16 +103,29 @@ export default function ProfileSetup({ navigation, route }) {
         setGpsLoading(false);
         return;
       }
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      const [place] = await Location.reverseGeocodeAsync({
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-      });
-      if (place) {
+      // Try getting last known position first (fastest)
+      let pos = await Location.getLastKnownPositionAsync({});
+
+      // If last known is not available, get current position with timeout
+      if (!pos) {
+        pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+          timeout: 5000, // 5 second timeout
+        });
+      }
+
+      // Use Photon reverse geocode for better compatibility especially on Web
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const resp = await fetch(
+        `${API_BASE_URL}/location/reverse?lon=${lon}&lat=${lat}`
+      );
+      const data = await resp.json();
+
+      if (data && data.features && data.features.length > 0) {
+        const place = data.features[0].properties;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        const cityName = [place.city || place.district, place.region]
+        const cityName = [place.city || place.name, place.state || place.country]
           .filter(Boolean)
           .join(", ");
         setCity(cityName);
@@ -419,7 +436,7 @@ export default function ProfileSetup({ navigation, route }) {
                         size={24}
                         color="rgba(255,255,255,0.6)"
                       />
-                      <Text style={styles.bannerHint}>Add Cover Photo</Text>
+                      <Text style={styles.bannerHint}>{t('setup.add_cover')}</Text>
                     </LinearGradient>
                   )}
                   {isUploading && (
@@ -468,7 +485,7 @@ export default function ProfileSetup({ navigation, route }) {
                     </TouchableOpacity>
                   </View>
                   <Text style={styles.avatarNameHint}>
-                    {avatar ? "Photo Updated" : "Add Photo"}
+                    {avatar ? t('setup.photo_updated') : t('setup.add_photo')}
                   </Text>
                 </View>
               </View>
@@ -477,7 +494,7 @@ export default function ProfileSetup({ navigation, route }) {
               <View style={styles.referralInputGroup}>
                 <View style={styles.referralLabelRow}>
                   <Text style={styles.fieldLabel}>
-                    Referral Code (Optional)
+                    {t('setup.referral_code')}
                   </Text>
                   {referralCode.length > 0 && (
                     <View style={styles.statusBadge}>
@@ -493,12 +510,12 @@ export default function ProfileSetup({ navigation, route }) {
                             size={12}
                             color="#10B981"
                           />
-                          <Text style={styles.validText}>Valid</Text>
+                          <Text style={styles.buttonText}>{t("common.next")}</Text>
                         </View>
                       ) : (
                         <View style={styles.invalidBadge}>
                           <Feather name="x-circle" size={12} color="#EF4444" />
-                          <Text style={styles.invalidText}>Invalid</Text>
+                          <Text style={styles.invalidText}>{t('setup.invalid')}</Text>
                         </View>
                       )}
                     </View>
@@ -529,7 +546,7 @@ export default function ProfileSetup({ navigation, route }) {
                   />
                   <TextInput
                     style={[styles.fieldInput, { textTransform: "uppercase" }]}
-                    placeholder="Enter code for premium perks"
+                    placeholder={t('setup.referral_placeholder')}
                     placeholderTextColor="#CBD5E1"
                     value={referralCode}
                     onChangeText={(val) => {
@@ -543,43 +560,43 @@ export default function ProfileSetup({ navigation, route }) {
                   />
                 </View>
                 <Text style={styles.referralHint}>
-                  Unlock a free Group Pass by using a friend's code.
+                  {t('setup.referral_hint')}
                 </Text>
               </View>
 
               <Field
                 icon="user"
-                label="Full Name *"
-                placeholder="e.g. Sofia Hernandez"
+                label={t('setup.full_name')}
+                placeholder={t('setup.name_placeholder')}
                 value={name}
                 onChangeText={setName}
               />
               <Field
                 icon="at-sign"
-                label="Username *"
-                placeholder="e.g. sofia_h"
+                label={t('setup.username')}
+                placeholder={t('setup.username_placeholder')}
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
               />
               <Field
                 icon="briefcase"
-                label="Job Title / Role"
-                placeholder="e.g. Designer at Tech Co"
+                label={t('setup.job_title')}
+                placeholder={t('setup.job_placeholder')}
                 value={jobTitle}
                 onChangeText={setJobTitle}
               />
               <Field
                 icon="home"
-                label="Company / University"
-                placeholder="e.g. Google or Stanford"
+                label={t('setup.company')}
+                placeholder={t('setup.company_placeholder')}
                 value={company}
                 onChangeText={setCompany}
               />
 
               {/* Birthday Section */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Birthday *</Text>
+                <Text style={styles.fieldLabel}>{t("setup.birthday_label")} *</Text>
                 <View style={styles.birthdayRow}>
                   <View
                     style={[
@@ -637,7 +654,7 @@ export default function ProfileSetup({ navigation, route }) {
 
               {/* Gender Picker */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Gender *</Text>
+                <Text style={styles.fieldLabel}>{t("setup.gender_label")} *</Text>
                 <View style={styles.genderRow}>
                   {["Male", "Female", "Non-binary", "Prefer not to say"].map(
                     (g) => (
@@ -672,21 +689,14 @@ export default function ProfileSetup({ navigation, route }) {
               <View style={styles.fieldWrap}>
                 <Text style={styles.fieldLabel}>City *</Text>
                 <View style={styles.cityRow}>
-                  <View style={styles.cityInputWrap}>
-                    <Feather
-                      name="map-pin"
-                      size={16}
-                      color="#94A3B8"
-                      style={{ marginRight: 8 }}
-                    />
-                    <TextInput
-                      style={styles.fieldInput}
-                      placeholder="e.g. San Francisco, CA"
-                      placeholderTextColor="#CBD5E1"
-                      value={city}
-                      onChangeText={setCity}
-                    />
-                  </View>
+                  <LocationAutocomplete
+                    containerStyle={{ flex: 1, marginBottom: 0 }}
+                    label={null}
+                    icon="map-pin"
+                    placeholder="e.g. San Francisco, CA"
+                    value={city}
+                    onChange={setCity}
+                  />
                   <TouchableOpacity
                     style={styles.gpsBtn}
                     onPress={detectLocation}
@@ -907,11 +917,10 @@ export default function ProfileSetup({ navigation, route }) {
             <View>
               <View style={styles.stepIntro}>
                 <Text style={styles.stepIntroTitle}>
-                  What are you looking for?
+                  {t("setup.looking_for_title")}
                 </Text>
                 <Text style={styles.stepIntroSub}>
-                  This helps people understand how to connect with you. Pick all
-                  that apply.
+                  {t("setup.looking_for_sub")}
                 </Text>
               </View>
 
@@ -941,8 +950,7 @@ export default function ProfileSetup({ navigation, route }) {
 
               <View style={styles.readyBanner}>
                 <Text style={styles.readyText}>
-                  🎉 Almost there! Tap "Finish" to start meeting people who
-                  share your interests.
+                  {t("setup.ready_text")}
                 </Text>
               </View>
             </View>
@@ -1006,7 +1014,7 @@ export default function ProfileSetup({ navigation, route }) {
               <ActivityIndicator color="#FFF" />
             ) : (
               <Text style={styles.ctaText}>
-                {step < STEPS.length - 1 ? "Continue" : "Finish & Explore! 🎉"}
+                {step < STEPS.length - 1 ? t("common.next") : "Finish & Explore! 🎉"}
               </Text>
             )}
           </LinearGradient>

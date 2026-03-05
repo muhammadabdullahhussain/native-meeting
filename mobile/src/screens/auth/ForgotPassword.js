@@ -7,8 +7,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../theme/theme';
+import { useTranslation } from 'react-i18next';
 
 export default function ForgotPassword({ navigation }) {
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
@@ -19,7 +21,7 @@ export default function ForgotPassword({ navigation }) {
     const handleReset = () => {
         setError('');
         if (!email || !email.includes('@')) {
-            setError('Please enter a valid email address.');
+            setError(t('auth.v_email_req'));
             return;
         }
         setSent(true);
@@ -52,8 +54,8 @@ export default function ForgotPassword({ navigation }) {
                                 <Feather name="lock" size={32} color="#FFF" />
                             </LinearGradient>
                         </View>
-                        <Text style={s.heroTitle}>Forgot Password?</Text>
-                        <Text style={s.heroSub}>No worries — we'll email you reset instructions.</Text>
+                        <Text style={s.heroTitle}>{t('auth.forgot_pass_title')}</Text>
+                        <Text style={s.heroSub}>{t('auth.forgot_pass_sub')}</Text>
                     </>
                 ) : (
                     <>
@@ -62,8 +64,8 @@ export default function ForgotPassword({ navigation }) {
                                 <Feather name="check" size={36} color="#FFF" />
                             </View>
                         </Animated.View>
-                        <Text style={s.heroTitle}>Email Sent! 🎉</Text>
-                        <Text style={s.heroSub}>Check your inbox for reset instructions.</Text>
+                        <Text style={s.heroTitle}>{t('auth.email_sent_title')}</Text>
+                        <Text style={s.heroSub}>{t('auth.email_sent_sub')}</Text>
                     </>
                 )}
             </LinearGradient>
@@ -76,7 +78,7 @@ export default function ForgotPassword({ navigation }) {
                         <>
                             {/* Email field */}
                             <View style={s.fieldGroup}>
-                                <Text style={s.fieldLabel}>Email Address</Text>
+                                <Text style={s.fieldLabel}>{t('auth.email')}</Text>
                                 <View style={s.fieldRow}>
                                     <Feather name="mail" size={17} color="#94A3B8" style={{ marginRight: 10 }} />
                                     <TextInput
@@ -105,25 +107,25 @@ export default function ForgotPassword({ navigation }) {
                                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                                     style={s.ctaGrad}
                                 >
-                                    <Text style={s.ctaText}>Send Reset Link</Text>
+                                    <Text style={s.ctaText}>{t('auth.send_reset_link')}</Text>
                                     <Feather name="send" size={16} color="#FFF" style={{ marginLeft: 8 }} />
                                 </LinearGradient>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={s.backToLogin} onPress={() => navigation.goBack()}>
                                 <Feather name="arrow-left" size={14} color="#6366F1" style={{ marginRight: 6 }} />
-                                <Text style={s.backToLoginText}>Back to Sign In</Text>
+                                <Text style={s.backToLoginText}>{t('auth.back_to_login')}</Text>
                             </TouchableOpacity>
                         </>
                     ) : (
                         <>
                             {/* Success state */}
                             <View style={s.successCard}>
-                                <Text style={s.successCardTitle}>What to do next:</Text>
+                                <Text style={s.successCardTitle}>{t('auth.next_steps')}</Text>
                                 {[
-                                    { icon: 'mail', text: `We've sent a link to ${email}` },
-                                    { icon: 'clock', text: 'The link expires in 30 minutes' },
-                                    { icon: 'shield', text: 'Check your spam folder too' },
+                                    { icon: 'mail', text: t('auth.link_sent_to', { email }) },
+                                    { icon: 'clock', text: t('auth.link_expiry') },
+                                    { icon: 'shield', text: t('auth.check_spam') },
                                 ].map((item, i) => (
                                     <View key={i} style={s.successStep}>
                                         <View style={s.successStepIcon}>
@@ -140,13 +142,13 @@ export default function ForgotPassword({ navigation }) {
                                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                                     style={s.ctaGrad}
                                 >
-                                    <Text style={s.ctaText}>Back to Sign In</Text>
+                                    <Text style={s.ctaText}>{t('auth.back_to_login')}</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={s.resendRow} onPress={() => { setSent(false); setEmail(''); }}>
-                                <Text style={s.resendText}>Didn't receive it? </Text>
-                                <Text style={s.resendLink}>Resend email</Text>
+                                <Text style={s.resendText}>{t('auth.didnt_receive')}</Text>
+                                <Text style={s.resendLink}>{t('auth.resend_email')}</Text>
                             </TouchableOpacity>
                         </>
                     )}

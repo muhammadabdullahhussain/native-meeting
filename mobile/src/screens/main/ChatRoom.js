@@ -392,7 +392,7 @@ export default function ChatRoom({ route, navigation }) {
                                 ]}
                                 numberOfLines={1}
                             >
-                                {isTyping ? 'typing...' : 'Tap to view profile'}
+                                {isTyping ? '✍️ typing...' : userStatus === 'online' ? '🟢 Online' : '⚫ Offline'}
                             </Text>
                         </View>
                     </TouchableOpacity>

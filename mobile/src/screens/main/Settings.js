@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ModernPlaceholder } from '../../components/common/ModernPlaceholder';
 import { authService } from '../../api/authService';
 import DeleteAccountModal from '../../components/modals/DeleteAccountModal';
+import { useTranslation } from 'react-i18next';
 
 // ─── Distance Slider (simple range via +/- buttons) ────────────────────────
 function DistanceControl({ value, onChange }) {
@@ -42,6 +43,7 @@ function DistanceControl({ value, onChange }) {
 
 // ─── Change Password Modal ─────────────────────────────────────────────────
 function PasswordModal({ visible, onClose, showToast }) {
+    const { t } = useTranslation();
     const [current, setCurrent] = useState('');
     const [next, setNext] = useState('');
     const [confirm, setConfirm] = useState('');
@@ -83,21 +85,21 @@ function PasswordModal({ visible, onClose, showToast }) {
             <View style={s.modalOverlay}>
                 <View style={s.modalSheet}>
                     <View style={s.modalHeader}>
-                        <Text style={s.modalTitle}>Change Password</Text>
+                        <Text style={s.modalTitle}>{t('settings.pass_modal_title')}</Text>
                         <TouchableOpacity onPress={() => { reset(); onClose(); }}>
                             <Feather name="x" size={20} color="#64748B" />
                         </TouchableOpacity>
                     </View>
 
                     <View style={s.inputGroup}>
-                        <Text style={s.inputLabel}>Current Password</Text>
+                        <Text style={s.inputLabel}>{t('settings.current_pass')}</Text>
                         <View style={s.inputRow}>
                             <TextInput
                                 style={s.input}
                                 value={current}
                                 onChangeText={setCurrent}
                                 secureTextEntry={!showCurrent}
-                                placeholder="Enter current password"
+                                placeholder={t('settings.pass_placeholder')}
                                 placeholderTextColor="#CBD5E1"
                             />
                             <TouchableOpacity onPress={() => setShowCurrent(v => !v)}>
@@ -107,14 +109,14 @@ function PasswordModal({ visible, onClose, showToast }) {
                     </View>
 
                     <View style={s.inputGroup}>
-                        <Text style={s.inputLabel}>New Password</Text>
+                        <Text style={s.inputLabel}>{t('settings.new_pass')}</Text>
                         <View style={s.inputRow}>
                             <TextInput
                                 style={s.input}
                                 value={next}
                                 onChangeText={setNext}
                                 secureTextEntry={!showNext}
-                                placeholder="Min 6 characters"
+                                placeholder={t('settings.pass_min_chars')}
                                 placeholderTextColor="#CBD5E1"
                             />
                             <TouchableOpacity onPress={() => setShowNext(v => !v)}>
@@ -124,14 +126,14 @@ function PasswordModal({ visible, onClose, showToast }) {
                     </View>
 
                     <View style={s.inputGroup}>
-                        <Text style={s.inputLabel}>Confirm New Password</Text>
+                        <Text style={s.inputLabel}>{t('settings.confirm_pass')}</Text>
                         <View style={s.inputRow}>
                             <TextInput
                                 style={s.input}
                                 value={confirm}
                                 onChangeText={setConfirm}
                                 secureTextEntry
-                                placeholder="Repeat new password"
+                                placeholder={t('settings.pass_repeat')}
                                 placeholderTextColor="#CBD5E1"
                             />
                         </View>
@@ -146,7 +148,7 @@ function PasswordModal({ visible, onClose, showToast }) {
                         {loading ? (
                             <ActivityIndicator color="#FFF" />
                         ) : (
-                            <Text style={s.primaryBtnText}>Save Password</Text>
+                            <Text style={s.primaryBtnText}>{t('settings.save_password')}</Text>
                         )}
                     </TouchableOpacity>
                 </View>
@@ -158,11 +160,13 @@ function PasswordModal({ visible, onClose, showToast }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function Settings({ navigation }) {
     const insets = useSafeAreaInsets();
+    const { t, i18n } = useTranslation();
     const { showToast } = useToast();
     const { user: authUser, logout, updateUser } = useAuth();
 
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showLanguageModal, setShowLanguageModal] = useState(false);
     const [isSavingSettings, setIsSavingSettings] = useState(false);
 
     // Discovery prefs (from user.settings)
@@ -176,11 +180,14 @@ export default function Settings({ navigation }) {
     const [msgEnabled, setMsgEnabled] = useState(authUser?.settings?.notifications?.messages ?? true);
     const [connEnabled, setConnEnabled] = useState(authUser?.settings?.notifications?.connections ?? true);
 
+    // Privacy prefs
+    const [showOnlineStatus, setShowOnlineStatus] = useState(authUser?.settings?.privacy?.showOnlineStatus ?? true);
+
     // Debounced settings sync
-    const saveSettings = useCallback(async (discovery, notifications) => {
+    const saveSettings = useCallback(async (discovery, notifications, privacy) => {
         try {
             setIsSavingSettings(true);
-            const response = await authService.updateSettings({ discovery, notifications });
+            const response = await authService.updateSettings({ discovery, notifications, privacy });
             if (response.success && response.data?.settings) {
                 // Sync to global AuthContext
                 updateUser({ settings: response.data.settings });
@@ -199,23 +206,34 @@ export default function Settings({ navigation }) {
             blurLocation,
             [field]: value,
         };
-        saveSettings(newDiscovery, null);
+        saveSettings(newDiscovery, null, null);
     };
 
     const handleNotifToggle = (field, value) => {
-        saveSettings(null, { [field]: value });
+        saveSettings(null, { [field]: value }, null);
+    };
+
+    const handlePrivacyToggle = (field, value) => {
+        saveSettings(null, null, { [field]: value });
     };
 
     const handleDistanceChange = (val) => {
         setMaxDistance(val);
-        saveSettings({ maxDistance: val }, null);
+        saveSettings({ maxDistance: val }, null, null);
     };
 
     const handleLogout = () => {
-        Alert.alert('Log Out', 'Are you sure you want to log out?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Log Out', style: 'destructive', onPress: () => logout() }
+        Alert.alert(t('settings.logout_title', 'Log Out'), t('settings.logout_confirm', 'Are you sure you want to log out?'), [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('settings.logout_btn', 'Log Out'), style: 'destructive', onPress: () => logout() }
         ]);
+    };
+
+    const changeLanguage = async (code) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await i18n.changeLanguage(code);
+        setShowLanguageModal(false);
+        showToast('Success', 'Language updated!', 'success');
     };
 
     const handleDelete = () => {
@@ -245,7 +263,7 @@ export default function Settings({ navigation }) {
                     <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
                         <Feather name="arrow-left" size={20} color="#FFF" />
                     </TouchableOpacity>
-                    <Text style={s.headerTitle}>Settings</Text>
+                    <Text style={s.headerTitle}>{t('settings.title')}</Text>
                     {isSavingSettings ? (
                         <ActivityIndicator color="rgba(255,255,255,0.7)" size="small" />
                     ) : (
@@ -261,9 +279,9 @@ export default function Settings({ navigation }) {
                         <ModernPlaceholder name={authUser?.name} size={50} style={s.profileAvatar} />
                     )}
                     <View style={s.profileInfo}>
-                        <Text style={s.profileName}>{authUser?.name || 'Anonymous User'}</Text>
+                        <Text style={s.profileName}>{authUser?.name || t('settings.anonymous_user')}</Text>
                         <Text style={s.profileSub}>
-                            {authUser?.username ? `@${authUser.username}` : authUser?.email} · {authUser?.city || 'No city'}
+                            {authUser?.username ? `@${authUser.username}` : authUser?.email} · {authUser?.city || t('settings.no_city')}
                         </Text>
                     </View>
                     <TouchableOpacity
@@ -287,22 +305,22 @@ export default function Settings({ navigation }) {
                         <LinearGradient colors={['#7C3AED', '#A855F7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.premiumBannerGrad}>
                             <Text style={s.premiumEmoji}>👑</Text>
                             <View style={{ flex: 1 }}>
-                                <Text style={s.premiumTitle}>Upgrade to Premium</Text>
-                                <Text style={s.premiumSub}>Unlimited groups · Advanced discovery · $3.99/mo</Text>
+                                <Text style={s.premiumTitle}>{t('settings.upgrade_premium')}</Text>
+                                <Text style={s.premiumSub}>{t('settings.premium_sub')}</Text>
                             </View>
                             <Feather name="chevron-right" size={18} color="rgba(255,255,255,0.8)" />
                         </LinearGradient>
                     </TouchableOpacity>
                 )}
 
-                <SectionLabel label="Discovery Preferences" />
+                <SectionLabel label={t('settings.discovery_prefs')} />
                 <View style={s.card}>
                     <View style={s.settingBlock}>
                         <View style={s.settingBlockHeader}>
                             <View style={[s.rowIconBox, { backgroundColor: '#DCFCE7' }]}>
                                 <Feather name="radio" size={16} color="#15803D" />
                             </View>
-                            <Text style={s.rowLabel}>Max Distance</Text>
+                            <Text style={s.rowLabel}>{t('settings.max_distance')}</Text>
                         </View>
                         <DistanceControl value={maxDistance} onChange={handleDistanceChange} />
                     </View>
@@ -311,8 +329,8 @@ export default function Settings({ navigation }) {
                         icon="users"
                         iconBg="#EEF2FF"
                         iconColor="#6366F1"
-                        label="Show Me to Others"
-                        sub="Appear in other users' Discover feed"
+                        label={t('settings.show_me')}
+                        sub={t('settings.show_me_sub')}
                         value={showMe}
                         onValueChange={(val) => {
                             setShowMe(val);
@@ -324,13 +342,56 @@ export default function Settings({ navigation }) {
                         icon="eye-off"
                         iconBg="#F5F3FF"
                         iconColor="#7C3AED"
-                        label="Blur My Location"
-                        sub="Show neighborhood instead of exact area"
+                        label={t('settings.blur_location')}
+                        sub={t('settings.blur_location_sub')}
                         value={blurLocation}
                         onValueChange={(val) => {
                             setBlurLocation(val);
                             handleDiscoveryToggle('blurLocation', val);
                         }}
+                    />
+                </View>
+
+                <SectionLabel label={t('settings.privacy_visibility')} />
+                <View style={s.card}>
+                    <ToggleRow
+                        icon="activity"
+                        iconBg="#F0FDF4"
+                        iconColor="#22C55E"
+                        label={t('settings.show_online')}
+                        sub={t('settings.show_online_sub')}
+                        value={showOnlineStatus}
+                        onValueChange={(val) => {
+                            setShowOnlineStatus(val);
+                            handlePrivacyToggle('showOnlineStatus', val);
+                        }}
+                    />
+                </View>
+
+                <SectionLabel label={t('settings.app_settings')} />
+                <View style={s.card}>
+                    <SettingRow
+                        icon="globe"
+                        iconBg="#F0F9FF"
+                        iconColor="#0EA5E9"
+                        label={t('settings.app_language')}
+                        sub={
+                          [
+                            { code: 'en', label: 'English' },
+                            { code: 'ur', label: 'Urdu (اردو)' },
+                            { code: 'hi', label: 'Hindi (हिन्दी)' },
+                            { code: 'es', label: 'Spanish (Español)' },
+                            { code: 'fr', label: 'French (Français)' },
+                            { code: 'ar', label: 'Arabic (العربية)' },
+                            { code: 'zh', label: 'Chinese (中文)' },
+                            { code: 'ru', label: 'Russian (Русский)' },
+                            { code: 'pt', label: 'Portuguese (Português)' },
+                            { code: 'bn', label: 'Bengali (বাংলা)' },
+                            { code: 'de', label: 'German (Deutsch)' },
+                            { code: 'id', label: 'Indonesian (Bahasa)' }
+                          ].find(l => l.code === i18n.language)?.label || 'English'
+                        }
+                        onPress={() => setShowLanguageModal(true)}
                     />
                 </View>
 
@@ -392,73 +453,64 @@ export default function Settings({ navigation }) {
                 */}
 
                 {/* ACCOUNT */}
-                <SectionLabel label="Account" />
+                <SectionLabel label={t('settings.account')} />
                 <View style={s.card}>
                     <SettingRow
                         icon="user" iconBg="#EEF2FF" iconColor="#6366F1"
-                        label="Edit Profile"
+                        label={t('settings.edit_profile')}
                         onPress={() => navigation.navigate('MainApp', { screen: 'Profile', params: { edit: true } })}
                     />
                     <Divider />
                     <SettingRow
                         icon="lock" iconBg="#EDE9FE" iconColor="#7C3AED"
-                        label="Change Password"
+                        label={t('settings.change_password')}
                         onPress={() => setShowPasswordModal(true)}
                     />
-                    {/* 
-                    <Divider />
-                    <SettingRow
-                        icon="star" iconBg="#FEF3C7" iconColor="#D97706"
-                        label="Invite Friends"
-                        sub="Earn Group Passes"
-                        onPress={() => navigation.navigate('Invite')}
-                    />
-                    */}
                     <Divider />
                     <SettingRow
                         icon="award" iconBg="#F5F3FF" iconColor="#7C3AED"
-                        label="Premium Membership"
-                        sub={authUser?.isPremium ? "View benefits & status" : "Upgrade for unlimited access"}
+                        label={t('settings.premium_membership')}
+                        sub={authUser?.isPremium ? t('settings.premium_status_active') : t('settings.premium_status_inactive')}
                         onPress={() => navigation.navigate('Premium')}
                     />
                 </View>
 
                 {/* SUPPORT */}
-                <SectionLabel label="Support & Legal" />
+                <SectionLabel label={t('settings.support_legal')} />
                 <View style={s.card}>
                     <SettingRow
                         icon="shield" iconBg="#EEF2FF" iconColor="#6366F1"
-                        label="Safety Center"
+                        label={t('settings.safety_center')}
                         onPress={() => navigation.navigate('SafetyCenter')}
                     />
                     <Divider />
                     <SettingRow
                         icon="help-circle" iconBg="#F1F5F9" iconColor="#64748B"
-                        label="Help & FAQ"
+                        label={t('settings.help_faq')}
                         onPress={() => navigation.navigate('HelpCenter')}
                     />
                     <Divider />
                     <SettingRow
                         icon="file-text" iconBg="#F1F5F9" iconColor="#64748B"
-                        label="Terms of Service"
+                        label={t('settings.terms_of_service')}
                         onPress={() => navigation.navigate('TermsOfService')}
                     />
                     <Divider />
                     <SettingRow
                         icon="shield" iconBg="#F1F5F9" iconColor="#64748B"
-                        label="Privacy Policy"
+                        label={t('settings.privacy_policy')}
                         onPress={() => navigation.navigate('PrivacyPolicy')}
                     />
                 </View>
 
                 {/* DANGER ZONE */}
-                <SectionLabel label="Account Actions" />
+                <SectionLabel label={t('settings.account_actions')} />
                 <View style={s.card}>
                     <TouchableOpacity style={s.dangerRow} onPress={handleLogout} activeOpacity={0.75}>
                         <View style={[s.rowIconBox, { backgroundColor: '#FEF2F2' }]}>
                             <Feather name="log-out" size={16} color="#EF4444" />
                         </View>
-                        <Text style={[s.dangerLabel, { color: '#EF4444' }]}>Log Out</Text>
+                        <Text style={[s.dangerLabel, { color: '#EF4444' }]}>{t('settings.logout')}</Text>
                         <Feather name="chevron-right" size={18} color="#EF4444" />
                     </TouchableOpacity>
                     <Divider />
@@ -466,12 +518,12 @@ export default function Settings({ navigation }) {
                         <View style={[s.rowIconBox, { backgroundColor: '#FEF2F2' }]}>
                             <Feather name="trash-2" size={16} color="#DC2626" />
                         </View>
-                        <Text style={[s.dangerLabel, { color: '#DC2626' }]}>Delete Account</Text>
+                        <Text style={[s.dangerLabel, { color: '#DC2626' }]}>{t('settings.delete_account')}</Text>
                         <Feather name="chevron-right" size={18} color="#DC2626" />
                     </TouchableOpacity>
                 </View>
 
-                <Text style={s.version}>BondUs v1.0.0 · Made with ❤️</Text>
+                <Text style={s.version}>{t('settings.version_info')}</Text>
                 <View style={{ height: 40 }} />
             </ScrollView>
 
@@ -486,6 +538,53 @@ export default function Settings({ navigation }) {
                 onClose={() => setShowDeleteModal(false)}
                 onDeleteDelted={confirmDelete}
             />
+
+            {/* Language Selection Modal */}
+            <Modal visible={showLanguageModal} animationType="fade" transparent>
+                <View style={s.modalOverlay}>
+                    <TouchableOpacity 
+                        style={{ flex: 1 }} 
+                        activeOpacity={1} 
+                        onPress={() => setShowLanguageModal(false)} 
+                    />
+                    <View style={s.modalSheet}>
+                        <View style={s.modalHeader}>
+                            <Text style={s.modalTitle}>{t('language.select_title')}</Text>
+                            <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                                <Feather name="x" size={20} color="#64748B" />
+                            </TouchableOpacity>
+                        </View>
+                        
+                        {[
+                            { code: 'en', label: 'English', flag: '🇺🇸' },
+                            { code: 'ur', label: 'Urdu (اردو)', flag: '🇵🇰' },
+                            { code: 'hi', label: 'Hindi (हिन्दी)', flag: '🇮🇳' },
+                            { code: 'es', label: 'Spanish (Español)', flag: '🇪🇸' },
+                            { code: 'fr', label: 'French (Français)', flag: '🇫🇷' },
+                            { code: 'ar', label: 'Arabic (العربية)', flag: '🇸🇦' },
+                            { code: 'zh', label: 'Chinese (中文)', flag: '🇨🇳' },
+                            { code: 'ru', label: 'Russian (Русский)', flag: '🇷🇺' },
+                            { code: 'pt', label: 'Portuguese (Português)', flag: '🇧🇷' },
+                            { code: 'bn', label: 'Bengali (বাংলা)', flag: '🇧🇩' },
+                            { code: 'de', label: 'German (Deutsch)', flag: '🇩🇪' },
+                            { code: 'id', label: 'Indonesian (Bahasa)', flag: '🇮🇩' }
+                        ].map((lang) => (
+                            <TouchableOpacity 
+                                key={lang.code}
+                                style={[s.langOption, i18n.language === lang.code && s.langOptionActive]}
+                                onPress={() => changeLanguage(lang.code)}
+                            >
+                                <Text style={s.langFlag}>{lang.flag}</Text>
+                                <Text style={s.langText}>{lang.label}</Text>
+                                {i18n.language === lang.code && (
+                                    <Feather name="check" size={18} color="#6366F1" />
+                                )}
+                            </TouchableOpacity>
+                        ))}
+                        <View style={{ height: 20 }} />
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -597,4 +696,22 @@ const s = StyleSheet.create({
     input: { flex: 1, paddingVertical: 13, fontSize: 15, fontFamily: theme.typography.fontFamily.medium, color: '#0F172A' },
     primaryBtn: { backgroundColor: '#6366F1', borderRadius: 16, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
     primaryBtnText: { fontSize: 16, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
+    
+    // Language Modal Specifics
+    langOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 14,
+        marginBottom: 8,
+        gap: 12,
+        backgroundColor: '#F8FAFC',
+    },
+    langOptionActive: {
+        backgroundColor: '#EEF2FF',
+        borderWidth: 1,
+        borderColor: '#818CF8',
+    },
+    langFlag: { fontSize: 20 },
+    langText: { flex: 1, fontSize: 16, fontFamily: theme.typography.fontFamily.medium, color: '#0F172A' },
 });

@@ -35,6 +35,7 @@ import { Skeleton } from "../../components/Skeleton";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
+import { useTranslation } from "react-i18next";
 import { authService } from "../../api/authService";
 import { ModernPlaceholder } from "../../components/common/ModernPlaceholder";
 import { EmptyState } from "../../components/common/EmptyState";
@@ -201,12 +202,13 @@ export default function Discover({ navigation }) {
   const { on } = useSocket();
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const myInterests = authUser?.interests || [];
 
   // State
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedInterest, setSelectedInterest] = useState("All");
+  const [selectedInterest, setSelectedInterest] = useState(t("discover.all", "All"));
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [sentRequests, setSentRequests] = useState([]);
   const [requestedGroups, setRequestedGroups] = useState([]);
@@ -268,8 +270,8 @@ export default function Discover({ navigation }) {
     return INTEREST_CATEGORIES.flatMap((c) => c.subInterests.slice(0, 1));
   }, []);
   const INTEREST_TABS = useMemo(() => {
-    return ["All", ...INTEREST_CATEGORIES.map((c) => c.name)];
-  }, []);
+    return [t("discover.all", "All"), ...INTEREST_CATEGORIES.map((c) => c.name)];
+  }, [t]);
 
   const fetchData = useCallback(
     async (refresh = false, loadMore = false) => {
@@ -403,7 +405,7 @@ export default function Discover({ navigation }) {
       } catch (error) {
         console.error("[Discover] Fetch failed:", error);
         if (!(error?.message || "").toLowerCase().includes("not authorized")) {
-          showToast("Error", "Could not load data", "error");
+          showToast(t("common.error"), t("discover.could_not_load"), "error");
         }
       } finally {
         setIsLoading(false);
@@ -489,7 +491,7 @@ export default function Discover({ navigation }) {
           return true;
         }
         backPressedOnce.current = true;
-        showToast("", "Press back again to exit", "info");
+        showToast("", t("common.press_back_again"), "info");
         setTimeout(() => {
           backPressedOnce.current = false;
         }, 2000);
@@ -556,8 +558,8 @@ export default function Discover({ navigation }) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRequestedGroups((prev) => [...prev, groupId]);
       showToast(
-        "Request Sent! ✉️",
-        `Your request to join "${groupName}" has been sent.`,
+        t("discover.request_sent"),
+        t("discover.join_request_sent_msg", { name: groupName }),
         "success",
       );
     } catch (err) {
@@ -565,7 +567,7 @@ export default function Discover({ navigation }) {
         setPremiumModalType("limit");
         setShowPremiumModal(true);
       } else {
-        showToast("Error", err.message || "Failed to send request", "error");
+        showToast(t("common.error"), err.message || t("discover.failed_request"), "error");
       }
     }
   };
@@ -576,9 +578,9 @@ export default function Discover({ navigation }) {
       await authService.sendConnectionRequest(userId);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSentRequests((prev) => [...prev, userId]);
-      showToast("Request Sent! ✉️", "They will be notified.", "success");
+      showToast(t("discover.request_sent"), t("discover.request_sent_msg"), "success");
     } catch (err) {
-      showToast("Error", err.message || "Failed to send request", "error");
+      showToast(t("common.error"), err.message || t("discover.failed_request"), "error");
     }
   };
 
@@ -693,8 +695,8 @@ export default function Discover({ navigation }) {
               <View style={styles.locationRow}>
                 <Feather name="map-pin" size={11} color="#94A3B8" />
                 <Text style={styles.locationText}>
-                  {item.city || "Nearby"} •{" "}
-                  {item.distanceKm ? `${item.distanceKm} km` : "Nearby"}
+                  {item.city || t("discover.nearby")} •{" "}
+                  {item.distanceKm <= 1 ? t("discover.nearby_tag") : item.distanceKm ? t("discover.distance_km", { distance: item.distanceKm }) : t("discover.nearby")}
                 </Text>
               </View>
             </View>
@@ -702,7 +704,7 @@ export default function Discover({ navigation }) {
               {matchPct > 0 && (
                 <View style={styles.matchBadge}>
                   <Text style={styles.matchPct}>{matchPct}%</Text>
-                  <Text style={styles.matchLabel}>match</Text>
+                  <Text style={styles.matchLabel}>{t("discover.match", "match")}</Text>
                 </View>
               )}
               <TouchableOpacity
@@ -755,7 +757,7 @@ export default function Discover({ navigation }) {
             {sharedCount > 0 && (
               <View style={styles.sharedNote}>
                 <Feather name="zap" size={10} color="#6366F1" />
-                <Text style={styles.sharedNoteText}>{sharedCount} shared</Text>
+                <Text style={styles.sharedNoteText}>{t("discover.shared_count", { count: sharedCount })}</Text>
               </View>
             )}
           </View>
@@ -767,16 +769,16 @@ export default function Discover({ navigation }) {
   const handleManualLocationRequest = async () => {
     const success = await requestLocationPermission();
     if (success) {
-      showToast("Location Updated", "We found your location!", "success");
+      showToast(t("discover.location_updated", "Location Updated"), t("discover.location_found", "We found your location!"), "success");
       fetchData(true);
     } else {
       Alert.alert(
-        "Location Required",
-        "Please enable location services in your device settings to discover people nearby.",
+        t("discover.location_required_title", "Location Required"),
+        t("discover.location_required_msg", "Please enable location services in your device settings to discover people nearby."),
         [
-          { text: "Cancel", style: "cancel" },
+          { text: t("common.cancel", "Cancel"), style: "cancel" },
           {
-            text: "Open Settings",
+            text: t("discover.open_settings", "Open Settings"),
             onPress: () => {
               if (Platform.OS === "ios") {
                 Linking.openURL("app-settings:");
@@ -839,7 +841,7 @@ export default function Discover({ navigation }) {
                   style={styles.discoverJoinGrad}
                 >
                   <Feather name="plus" size={12} color="#FFF" />
-                  <Text style={styles.discoverJoinText}>Join</Text>
+                  <Text style={styles.discoverJoinText}>{t("groups.join", "Join")}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             )}
@@ -872,8 +874,8 @@ export default function Discover({ navigation }) {
       >
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.headerGreeting}>Good morning 👋</Text>
-            <Text style={styles.headerTitle}>Find Your People</Text>
+            <Text style={styles.headerGreeting}>{t("discover.greeting_morning")}</Text>
+            <Text style={styles.headerTitle}>{t("discover.find_people")}</Text>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity
@@ -915,7 +917,7 @@ export default function Discover({ navigation }) {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by name, city or interest..."
+            placeholder={t("discover.search_placeholder")}
             placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -971,14 +973,82 @@ export default function Discover({ navigation }) {
             <>
               <View style={{ height: 16 }} />
 
+              {/* ── ACTIVE NOW SECTION (Premium Restoration) ── */}
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Groups For You</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={styles.sectionTitle}>{t("discover.active_now")}</Text>
+                  {onlineUsers.length > 0 && (
+                    <View style={styles.activeCountBadge}>
+                      <View style={styles.pulseDot} />
+                      <Text style={styles.activeCountText}>{t("discover.online_count", { count: onlineUsers.length })}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {onlineUsers.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.activeStrip}
+                >
+                  {onlineUsers.map((u) => (
+                    <TouchableOpacity
+                      key={u.id || u._id}
+                      style={styles.activeItem}
+                      onPress={() => navigation.navigate("UserProfile", { user: u })}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.activeAvatarWrap}>
+                        <LinearGradient
+                          colors={['#22C55E', '#10B981', '#34D399']}
+                          style={styles.activeGlowRing}
+                        />
+                        {u.avatar ? (
+                          <Image source={{ uri: u.avatar }} style={styles.activeAvatar} />
+                        ) : (
+                          <ModernPlaceholder name={u.name} size={54} style={styles.activeAvatar} />
+                        )}
+                        <View style={styles.activeOnlineDot} />
+                      </View>
+                      <Text style={styles.activeName} numberOfLines={1}>
+                        {u.name.split(" ")[0]}
+                      </Text>
+                      {u.distanceKm !== undefined && (
+                        <Text style={styles.activeDist}>
+                          {u.distanceKm <= 1 ? t("discover.nearby_tag") : t("discover.distance_km", { distance: u.distanceKm })}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.activeEmptyContainer}>
+                  <LinearGradient
+                    colors={['rgba(255,255,255,0.8)', 'rgba(241,245,249,0.5)']}
+                    style={styles.activeEmptyCard}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.activeEmptyIconCircle}>
+                      <Feather name="moon" size={18} color="#94A3B8" />
+                    </View>
+                    <View>
+                      <Text style={styles.activeEmptyTitle}>{t("discover.quiet_nearby_title")}</Text>
+                      <Text style={styles.activeEmptySub}>{t("discover.quiet_nearby_sub")}</Text>
+                    </View>
+                  </LinearGradient>
+                </View>
+              )}
+
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t("discover.groups_for_you")}</Text>
                 <TouchableOpacity
                   onPress={() =>
                     navigation.navigate("Connections", { tab: "Groups" })
                   }
                 >
-                  <Text style={styles.seeAll}>See all</Text>
+                  <Text style={styles.seeAll}>{t("discover.see_all")}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -1001,9 +1071,9 @@ export default function Discover({ navigation }) {
                     <EmptyState
                       compact
                       icon="users"
-                      title="No groups found"
-                      description="Join or create a community group."
-                      actionLabel="Browse"
+                      title={t("discover.no_groups_found")}
+                      description={t("discover.join_group_desc")}
+                      actionLabel={t("discover.browse", "Browse")}
                       onAction={() =>
                         navigation.navigate("Connections", { tab: "Groups" })
                       }
@@ -1013,7 +1083,7 @@ export default function Discover({ navigation }) {
               </ScrollView>
 
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Communities</Text>
+                <Text style={styles.sectionTitle}>{t("discover.communities")}</Text>
               </View>
               <ScrollView
                 horizontal
@@ -1056,7 +1126,7 @@ export default function Discover({ navigation }) {
                           {cat.name}
                         </Text>
                         <Text style={styles.communityMembers}>
-                          {cat.subInterests?.length || 0} topics
+                          {t("groups.topics", { count: cat.subInterests?.length || 0 })}
                         </Text>
                       </LinearGradient>
                     </TouchableOpacity>
@@ -1065,9 +1135,9 @@ export default function Discover({ navigation }) {
               </ScrollView>
 
               <View style={[styles.sectionHeader, { marginTop: 12 }]}>
-                <Text style={styles.sectionTitle}>Discover People</Text>
+                <Text style={styles.sectionTitle}>{t("discover.discover_people")}</Text>
                 <Text style={styles.sectionSub}>
-                  {filteredUsers.length} found
+                  {t("discover.found_count", { count: filteredUsers.length })}
                 </Text>
               </View>
               <ScrollView
@@ -1108,23 +1178,23 @@ export default function Discover({ navigation }) {
               title={
                 authUser?.location?.coordinates
                   ? myInterests.length === 0
-                    ? "Add your interests"
-                    : "No people found"
-                  : "Location Required"
+                    ? t("discover.add_interests_title", "Add your interests")
+                    : t("discover.no_people_found")
+                  : t("discover.location_required_title")
               }
               description={
                 authUser?.location?.coordinates
                   ? myInterests.length === 0
-                    ? "Add interests to your profile to find people who share your passions."
-                    : "Try a different interest or expand your search radius."
-                  : "Enable location services to discover people near you."
+                    ? t("discover.add_interests_desc", "Add interests to your profile to find people who share your passions.")
+                    : t("discover.no_people_desc", "Try a different interest or expand your search radius.")
+                  : t("discover.location_required_msg")
               }
               actionLabel={
                 authUser?.location?.coordinates
                   ? myInterests.length === 0
-                    ? "Edit Profile"
-                    : "Reset Filters"
-                  : "Enable Location"
+                    ? t("discover.edit_profile_action")
+                    : t("discover.reset_filters_action")
+                  : t("discover.enable_location_action")
               }
               onAction={
                 authUser?.location?.coordinates
@@ -1174,10 +1244,9 @@ export default function Discover({ navigation }) {
                 </View>
               </View>
             </View>
-            <Text style={styles.radarTitle}>Within {filterDistance} km</Text>
+            <Text style={styles.radarTitle}>{t("discover.proximity_title", { distance: filterDistance })}</Text>
             <Text style={styles.radarSub}>
-              {filteredUsers.length} people nearby · Exact locations hidden for
-              privacy
+              {t("discover.proximity_sub", { count: filteredUsers.length })}
             </Text>
             <TouchableOpacity
               style={styles.radarChangeRadius}
@@ -1185,7 +1254,7 @@ export default function Discover({ navigation }) {
               activeOpacity={0.85}
             >
               <Feather name="sliders" size={14} color="#6366F1" />
-              <Text style={styles.radarChangeRadiusText}>Change Radius</Text>
+              <Text style={styles.radarChangeRadiusText}>{t("discover.change_radius")}</Text>
             </TouchableOpacity>
           </LinearGradient>
 
@@ -1197,10 +1266,10 @@ export default function Discover({ navigation }) {
               const dist = item.distanceKm;
               const proximityLabel =
                 dist < 1
-                  ? "Less than 1 km away"
+                  ? t("discover.proximity_less_than_1")
                   : dist < 5
-                    ? `About ${Math.round(dist)} km away`
-                    : `Within ${Math.round(dist)} km`;
+                    ? t("discover.proximity_about", { distance: Math.round(dist) })
+                    : t("discover.proximity_within", { distance: Math.round(dist) });
               return (
                 <TouchableOpacity
                   style={styles.proximityCard}
@@ -1278,9 +1347,9 @@ export default function Discover({ navigation }) {
             ListEmptyComponent={
               <EmptyState
                 icon="radio"
-                title="No one in range"
-                description="We couldn't find anyone within this radius. Try expanding your search area."
-                actionLabel="Expand Radius"
+                title={t("discover.no_one_range_title", "No one in range")}
+                description={t("discover.no_one_range_desc", "We couldn't find anyone within this radius. Try expanding your search area.")}
+                actionLabel={t("discover.change_radius")}
                 onAction={() => setFilterVisible(true)}
               />
             }
@@ -1303,13 +1372,13 @@ export default function Discover({ navigation }) {
             {/* Header */}
             <View style={styles.sheetHeader}>
               <View>
-                <Text style={styles.sheetTitle}>Filters</Text>
+                <Text style={styles.sheetTitle}>{t("discover.filters_title")}</Text>
                 <Text style={styles.sheetSubtitle}>
-                  Refine who you discover
+                  {t("discover.filters_sub")}
                 </Text>
               </View>
               <TouchableOpacity onPress={resetFilters} style={styles.resetBtn}>
-                <Text style={styles.sheetReset}>Reset All</Text>
+                <Text style={styles.sheetReset}>{t("discover.reset_all")}</Text>
               </TouchableOpacity>
             </View>
 
@@ -1330,9 +1399,9 @@ export default function Discover({ navigation }) {
                       <Feather name="wifi" size={16} color="#16A34A" />
                     </View>
                     <View>
-                      <Text style={styles.filterLabel}>Online Now</Text>
+                      <Text style={styles.filterLabel}>{t("discover.online_now")}</Text>
                       <Text style={styles.filterSub}>
-                        Only show active users
+                        {t("discover.online_now_sub")}
                       </Text>
                     </View>
                   </View>
@@ -1357,9 +1426,9 @@ export default function Discover({ navigation }) {
                       <Feather name="check-circle" size={16} color="#2563EB" />
                     </View>
                     <View>
-                      <Text style={styles.filterLabel}>Verified Only</Text>
+                      <Text style={styles.filterLabel}>{t("discover.verified_only")}</Text>
                       <Text style={styles.filterSub}>
-                        Show verified profiles
+                        {t("discover.verified_only_sub")}
                       </Text>
                     </View>
                   </View>
@@ -1382,14 +1451,14 @@ export default function Discover({ navigation }) {
                   >
                     <Feather name="bar-chart-2" size={16} color="#9333EA" />
                   </View>
-                  <Text style={styles.filterLabel}>Sort By</Text>
+                  <Text style={styles.filterLabel}>{t("discover.sort_by")}</Text>
                 </View>
                 <View style={styles.chipRow}>
                   {[
-                    { label: "Distance", value: "distance" },
-                    { label: "Newest", value: "newest" },
-                    { label: "Online", value: "online" },
-                    { label: "Match %", value: "match" },
+                    { label: t("discover.distance"), value: "distance" },
+                    { label: t("discover.newest"), value: "newest" },
+                    { label: t("discover.online"), value: "online" },
+                    { label: t("discover.match"), value: "match" },
                   ].map((opt) => (
                     <TouchableOpacity
                       key={opt.value}
@@ -1420,15 +1489,15 @@ export default function Discover({ navigation }) {
                   >
                     <Feather name="radio" size={16} color="#7C3AED" />
                   </View>
-                  <Text style={styles.filterLabel}>Proximity Radius</Text>
+                  <Text style={styles.filterLabel}>{t("discover.proximity_radius")}</Text>
                 </View>
                 <RangeSlider
-                  label="Distance"
+                  label={t("discover.distance")}
                   value={filterDistance}
                   min={1}
                   max={200}
                   onValueChange={setFilterDistance}
-                  formatValue={(v) => `${v} km`}
+                  formatValue={(v) => t("discover.distance_km", { distance: v })}
                 />
                 <View style={styles.distancePresets}>
                   {[1, 5, 10, 25, 50, 100].map((d) => (
@@ -1446,7 +1515,7 @@ export default function Discover({ navigation }) {
                           filterDistance === d && styles.distPresetTextActive,
                         ]}
                       >
-                        {d}km
+                        {t("discover.distance_km", { distance: d })}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -1461,26 +1530,26 @@ export default function Discover({ navigation }) {
                   >
                     <Feather name="user" size={16} color="#D97706" />
                   </View>
-                  <Text style={styles.filterLabel}>Age Range</Text>
+                  <Text style={styles.filterLabel}>{t("discover.age_range")}</Text>
                   <Text style={styles.filterLabelBadge}>
-                    {filterAgeMin}–{filterAgeMax} yrs
+                    {t("discover.age_range_label", { min: filterAgeMin, max: filterAgeMax })}
                   </Text>
                 </View>
                 <RangeSlider
-                  label="Min Age"
+                  label={t("discover.min_age")}
                   value={filterAgeMin}
                   min={18}
                   max={filterAgeMax - 1}
                   onValueChange={setFilterAgeMin}
-                  formatValue={(v) => `${v} yrs`}
+                  formatValue={(v) => t("discover.age_label", { count: v })}
                 />
                 <RangeSlider
-                  label="Max Age"
+                  label={t("discover.max_age")}
                   value={filterAgeMax}
                   min={filterAgeMin + 1}
                   max={80}
                   onValueChange={setFilterAgeMax}
-                  formatValue={(v) => `${v} yrs`}
+                  formatValue={(v) => t("discover.age_label", { count: v })}
                 />
               </View>
 
@@ -1492,25 +1561,30 @@ export default function Discover({ navigation }) {
                   >
                     <Feather name="users" size={16} color="#BE185D" />
                   </View>
-                  <Text style={styles.filterLabel}>Show Me</Text>
+                  <Text style={styles.filterLabel}>{t("discover.show_me")}</Text>
                 </View>
                 <View style={styles.chipRow}>
-                  {GENDER_OPTIONS.map((opt) => (
+                  {[
+                    { key: "Anyone", label: t("discover.anyone") },
+                    { key: "Men", label: t("discover.men") },
+                    { key: "Women", label: t("discover.women") },
+                    { key: "Non-binary", label: t("discover.non_binary") },
+                  ].map((opt) => (
                     <TouchableOpacity
-                      key={opt}
+                      key={opt.key}
                       style={[
                         styles.filterChip,
-                        filterGender === opt && styles.filterChipActive,
+                        filterGender === opt.key && styles.filterChipActive,
                       ]}
-                      onPress={() => setFilterGender(opt)}
+                      onPress={() => setFilterGender(opt.key)}
                     >
                       <Text
                         style={[
                           styles.filterChipText,
-                          filterGender === opt && styles.filterChipTextActive,
+                          filterGender === opt.key && styles.filterChipTextActive,
                         ]}
                       >
-                        {opt}
+                        {opt.label}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -1732,7 +1806,7 @@ export default function Discover({ navigation }) {
                     color="#FFF"
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={styles.applyText}>Apply Filters</Text>
+                  <Text style={styles.applyText}>{t("discover.apply_filters")}</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -1747,7 +1821,7 @@ export default function Discover({ navigation }) {
                   color="#64748B"
                   style={{ marginRight: 8 }}
                 />
-                <Text style={styles.closeModalBtnText}>Close</Text>
+                <Text style={styles.closeModalBtnText}>{t("discover.close", "Close")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1853,26 +1927,34 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.bold,
   },
 
-  activeStrip: { paddingHorizontal: 20, gap: 16, paddingBottom: 4 },
-  activeItem: { alignItems: "center", width: 62 },
-  activeAvatarWrap: { position: "relative", marginBottom: 6 },
+  activeStrip: { paddingHorizontal: 20, gap: 16, paddingBottom: 10, paddingTop: 4 },
+  activeItem: { alignItems: "center", width: 68 },
+  activeAvatarWrap: { position: "relative", marginBottom: 8, justifyContent: 'center', alignItems: 'center' },
+  activeGlowRing: {
+    position: 'absolute',
+    width: 62,
+    height: 62,
+    borderRadius: 22,
+    opacity: 0.8,
+  },
   activeAvatar: {
     width: 54,
     height: 54,
     borderRadius: 18,
-    borderWidth: 2.5,
-    borderColor: "#22C55E",
+    borderWidth: 2,
+    borderColor: "#FFF",
   },
   activeOnlineDot: {
     position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 13,
-    height: 13,
-    borderRadius: 6.5,
+    bottom: -1,
+    right: -1,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: "#22C55E",
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: "#FFF",
+    zIndex: 10,
   },
   activeName: {
     fontSize: 12,
@@ -1882,8 +1964,69 @@ const styles = StyleSheet.create({
   },
   activeDist: {
     fontSize: 10,
-    color: "#94A3B8",
+    color: "#6366F1",
+    fontFamily: theme.typography.fontFamily.bold,
+    marginTop: 1,
+  },
+
+  // Active Count Badge
+  activeCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 6,
+  },
+  pulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#22C55E',
+  },
+  activeCountText: {
+    fontSize: 11,
+    fontFamily: theme.typography.fontFamily.bold,
+    color: '#166534',
+  },
+
+  // Active Empty State
+  activeEmptyContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  activeEmptyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 20,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  activeEmptyIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  activeEmptyTitle: {
+    fontSize: 14,
+    fontFamily: theme.typography.fontFamily.bold,
+    color: '#475569',
+  },
+  activeEmptySub: {
+    fontSize: 12,
     fontFamily: theme.typography.fontFamily.medium,
+    color: '#94A3B8',
   },
 
   communityScroll: { paddingHorizontal: 20, gap: 12, paddingBottom: 4 },

@@ -20,6 +20,7 @@ import { theme } from "../../theme/theme";
 import { useAuth } from "../../context/AuthContext";
 import { authService } from "../../api/authService";
 import { useToast } from "../../context/ToastContext";
+import { useTranslation } from "react-i18next";
 
 const INTEREST_PREVIEW = [
   "Chess ♟️",
@@ -31,6 +32,7 @@ const INTEREST_PREVIEW = [
 ];
 
 export default function Login({ navigation }) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { login } = useAuth();
   const { showToast } = useToast();
@@ -55,8 +57,8 @@ export default function Login({ navigation }) {
         setInitialReferralCode(code);
         setIsLogin(false); // Switch to registration if coming from a link
         showToast(
-          "Referral Detected",
-          `Applying referral code: ${code}`,
+          t('auth.referral_detected'),
+          t('auth.referral_applying', { code }),
           "success",
         );
       }
@@ -99,24 +101,24 @@ export default function Login({ navigation }) {
     // Robust Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!cleanEmail || !emailRegex.test(cleanEmail)) {
-      setError("Please enter a valid email address (e.g. name@domain.com).");
+      setError(t('auth.v_email_req'));
       return;
     }
 
     if (!isLogin) {
       if (!name.trim() || name.trim().length < 3) {
-        setError("Please enter your full name (at least 3 characters).");
+        setError(t('auth.v_name_req'));
         return;
       }
 
       const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
       if (!cleanPassword || !passwordRegex.test(cleanPassword)) {
-        setError("Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.");
+        setError(t('auth.v_pass_req'));
         return;
       }
     } else {
       if (!cleanPassword || cleanPassword.length < 6) {
-        setError("Incorrect password format.");
+        setError(t('auth.v_pass_format'));
         return;
       }
     }
@@ -139,9 +141,9 @@ export default function Login({ navigation }) {
         });
       }
     } catch (e) {
-      const msg = e.message || "Something went wrong";
+      const msg = e.message || t('common.error');
       setError(msg);
-      showToast("Authentication Error", msg, "error");
+      showToast(t('auth.auth_error'), msg, "error");
     } finally {
       setIsLoading(false);
     }
@@ -167,12 +169,12 @@ export default function Login({ navigation }) {
         </View>
 
         <Text style={styles.heroTitle}>
-          {isLogin ? "Welcome back!" : "Find your people."}
+          {isLogin ? t('auth.welcome_back') : t('auth.find_people')}
         </Text>
         <Text style={styles.heroSub}>
           {isLogin
-            ? "Your community is waiting for you"
-            : "Connect with people who share your passions"}
+            ? t('auth.login_sub')
+            : t('auth.register_sub')}
         </Text>
 
         {/* Scrolling interest chips */}
@@ -202,7 +204,7 @@ export default function Login({ navigation }) {
         >
           {/* Tab toggle */}
           <View style={styles.toggleRow}>
-            {["Sign In", "Create Account"].map((label, i) => {
+            {[t('auth.sign_in'), t('auth.create_account')].map((label, i) => {
               const active = (i === 0) === isLogin;
               return (
                 <TouchableOpacity
@@ -231,7 +233,7 @@ export default function Login({ navigation }) {
           >
             {!isLogin && (
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Full Name</Text>
+                <Text style={styles.inputLabel}>{t('auth.full_name')}</Text>
                 <View style={styles.inputRow}>
                   <Feather
                     name="user"
@@ -241,7 +243,7 @@ export default function Login({ navigation }) {
                   />
                   <TextInput
                     style={styles.input}
-                    placeholder="e.g. Sofia Hernandez"
+                    placeholder={t('setup.name_placeholder')}
                     placeholderTextColor="#CBD5E1"
                     value={name}
                     onChangeText={setName}
@@ -252,7 +254,7 @@ export default function Login({ navigation }) {
             )}
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={styles.inputLabel}>{t('auth.email')}</Text>
               <View style={styles.inputRow}>
                 <Feather
                   name="mail"
@@ -273,7 +275,7 @@ export default function Login({ navigation }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Password</Text>
+              <Text style={styles.inputLabel}>{t('auth.password')}</Text>
               <View style={styles.inputRow}>
                 <Feather
                   name="lock"
@@ -283,7 +285,7 @@ export default function Login({ navigation }) {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="At least 6 characters"
+                  placeholder={t('setup.referral_placeholder').includes('perks') ? "At least 6 characters" : t('settings.pass_min_chars')}
                   placeholderTextColor="#CBD5E1"
                   value={password}
                   onChangeText={setPassword}
@@ -307,7 +309,7 @@ export default function Login({ navigation }) {
                 onPress={() => navigation.navigate("ForgotPassword")}
                 style={styles.forgotRow}
               >
-                <Text style={styles.forgotText}>Forgot password?</Text>
+                <Text style={styles.forgotText}>{t('auth.forgot_pass')}</Text>
               </TouchableOpacity>
             )}
 
@@ -340,7 +342,7 @@ export default function Login({ navigation }) {
                   <ActivityIndicator color="#FFF" />
                 ) : (
                   <Text style={styles.ctaText}>
-                    {isLogin ? "Sign In" : "Create Account"}
+                    {isLogin ? t('auth.sign_in') : t('auth.create_account')}
                   </Text>
                 )}
               </LinearGradient>
@@ -349,33 +351,33 @@ export default function Login({ navigation }) {
             {/* Divider */}
             <View style={styles.dividerRow}>
               <View style={styles.divider} />
-              <Text style={styles.dividerText}>or continue with</Text>
+              <Text style={styles.dividerText}>{t('auth.or_continue')}</Text>
               <View style={styles.divider} />
             </View>
 
             {/* Social buttons */}
             <View style={styles.socialRow}>
               {[
-                { label: "Google", icon: "g", color: "#EA4335" },
-                { label: "Apple", icon: "", color: "#0F172A" },
+                { label: t('auth.google'), icon: "g", color: "#EA4335", id: 'Google' },
+                { label: t('auth.apple'), icon: "", color: "#0F172A", id: 'Apple' },
               ].map((s) => (
                 <TouchableOpacity
-                  key={s.label}
+                  key={s.id}
                   style={styles.socialBtn}
                   activeOpacity={0.8}
                   onPress={() => {
                     showToast(
-                      "Coming Soon",
-                      `${s.label} login is not available yet. Please use email registration.`,
+                      t('auth.social_soon_title'),
+                      t('auth.social_soon_msg', { service: s.id }),
                       "info",
                     );
                   }}
                 >
                   <Text style={[styles.socialIcon, { color: s.color }]}>
-                    {s.label === "Google" ? "G" : ""}
+                    {s.id === "Google" ? "G" : ""}
                   </Text>
                   <Feather
-                    name={s.label === "Apple" ? "smartphone" : "globe"}
+                    name={s.id === "Apple" ? "smartphone" : "globe"}
                     size={18}
                     color={s.color}
                     style={{ marginRight: 8 }}
@@ -386,9 +388,10 @@ export default function Login({ navigation }) {
             </View>
 
             <Text style={styles.terms}>
-              By continuing, you agree to our{" "}
-              <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-              <Text style={styles.termsLink}>Privacy Policy</Text>
+              {t('auth.terms_agree')}
+              <Text style={styles.termsLink}>{t('settings.terms_of_service')}</Text>
+              {t('auth.and')}
+              <Text style={styles.termsLink}>{t('settings.privacy_policy')}</Text>
             </Text>
           </Animated.View>
         </ScrollView>

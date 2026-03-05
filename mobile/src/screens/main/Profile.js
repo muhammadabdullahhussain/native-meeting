@@ -23,6 +23,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import * as Haptics from "expo-haptics";
 import { theme } from "../../theme/theme";
 import { useToast } from "../../context/ToastContext";
 import { authService } from "../../api/authService";
@@ -30,7 +32,9 @@ import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 import { ModernPlaceholder } from "../../components/common/ModernPlaceholder";
 import PremiumBadge from "../../components/PremiumBadge";
-import { LOCAL_IP } from "../../config";
+import { LOCAL_IP, API_BASE_URL } from "../../config";
+import LocationAutocomplete from "../../components/common/LocationAutocomplete";
+import { useTranslation } from "react-i18next";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data
@@ -75,6 +79,7 @@ export default function Profile({ navigation, route }) {
   const { isConnected } = useSocket();
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const safeTop =
     Platform.OS === "android" ? StatusBar.currentHeight || 0 : insets.top;
 
@@ -84,6 +89,7 @@ export default function Profile({ navigation, route }) {
   const [activePhoto, setActivePhoto] = useState(0);
   const [editModal, setEditModal] = useState(false);
   const [shareModal, setShareModal] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   // Compute 'last active' label from real lastSeen
   const getActiveLabel = (ls) => {
@@ -189,8 +195,8 @@ export default function Profile({ navigation, route }) {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       showToast(
-        "Permission needed",
-        "Please allow photo access to change your photos.",
+        t("profile.edit.permission_needed"),
+        t("profile.edit.photo_permission_msg"),
         "info",
       );
       return;
@@ -225,19 +231,67 @@ export default function Profile({ navigation, route }) {
           setForm((f) => ({ ...f, [type]: newUrl }));
           setUser((u) => ({ ...u, [type]: newUrl }));
 
-          showToast("Success", "Photo updated successfully!", "success");
+          showToast(t("common.success"), t("profile.edit.photo_success"), "success");
         }
       } catch (error) {
         console.error("Upload failed:", error);
         showToast(
-          "Upload Failed",
-          error.message || "Could not upload image.",
+          t("profile.edit.permission_needed"),
+          error.message || t("profile.edit.photo_permission_msg"),
           "error",
         );
       } finally {
         setIsUploading(false);
         setUploadingTarget(null);
       }
+    }
+  };
+
+  const detectLocation = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setGpsLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        showToast(
+          t("profile.edit.permission_needed"),
+          t("profile.edit.location_permission_msg"),
+          "error"
+        );
+        setGpsLoading(false);
+        return;
+      }
+      // Try getting last known position first (fastest)
+      let pos = await Location.getLastKnownPositionAsync({});
+
+      // If last known is not available, get current position with timeout
+      if (!pos) {
+        pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+          timeout: 5000, // 5 second timeout
+        });
+      }
+
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const resp = await fetch(
+        `${API_BASE_URL}/location/reverse?lon=${lon}&lat=${lat}`
+      );
+      const data = await resp.json();
+
+      if (data && data.features && data.features.length > 0) {
+        const place = data.features[0].properties;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        const cityName = [place.city || place.name, place.state || place.country]
+          .filter(Boolean)
+          .join(", ");
+        setForm((f) => ({ ...f, city: cityName }));
+      }
+    } catch (e) {
+      console.error(e);
+      showToast(t("common.error"), t("profile.location_not_set"), "error");
+    } finally {
+      setGpsLoading(false);
     }
   };
 
@@ -253,9 +307,9 @@ export default function Profile({ navigation, route }) {
       // 3. Local State
       setUser((u) => ({ ...u, ...form }));
       setEditModal(false);
-      showToast("Success", "Profile updated!", "success");
+      showToast(t("common.success"), t("profile.edit.success_msg"), "success");
     } catch (error) {
-      showToast("Error", error.message || "Could not save changes", "error");
+      showToast(t("common.error"), error.message || t("common.error"), "error");
     } finally {
       setIsUploading(false);
     }
@@ -325,12 +379,12 @@ export default function Profile({ navigation, route }) {
             disabled={isUploading}
           >
             <Feather name="camera" size={13} color="#FFF" />
-            <Text style={s.bannerCameraText}>Cover</Text>
+            <Text style={s.bannerCameraText}>{t("profile.cover")}</Text>
           </TouchableOpacity>
           {isUploading && uploadingTarget === "banner" && (
             <View style={s.uploadOverlayRect}>
               <ActivityIndicator size="small" color="#FFFFFF" />
-              <Text style={s.uploadOverlayText}>Uploading cover...</Text>
+              <Text style={s.uploadOverlayText}>{t("profile.edit.uploading_cover")}</Text>
             </View>
           )}
 
@@ -361,21 +415,21 @@ export default function Profile({ navigation, route }) {
           {user.isPremium && (
             <View style={s.premiumBadgeWrapper}>
               <PremiumBadge size={16} />
-              <Text style={s.premiumBadgeText}>Premium Member</Text>
+              <Text style={s.premiumBadgeText}>{t("profile.premium_member")}</Text>
             </View>
           )}
           <Text style={s.name} numberOfLines={2}>
-            {user.name || "Anonymous User"}
+            {user.name || t("profile.anonymous")}
           </Text>
           <Text style={s.headline}>
-            {user.jobTitle || "No Title Set"}
+            {user.jobTitle || t("profile.no_title")}
             {user.company ? ` · ${user.company}` : ""}
           </Text>
           <View style={s.locationRow}>
             <Feather name="map-pin" size={12} color="#94A3B8" />
             <Text style={s.locationText}>
               {" "}
-              {user.city || "Location not set"}
+              {user.city || t("profile.location_not_set")}
             </Text>
           </View>
         </View>
@@ -384,19 +438,19 @@ export default function Profile({ navigation, route }) {
         <View style={s.statsRow}>
           <Stat
             n={user.interests?.length || 0}
-            label="Interests"
+            label={t("profile.interests")}
             color="#6366F1"
           />
           <View style={s.statSep} />
           <Stat
             n={`${user.conversations}/30`}
-            label="Chats"
+            label={t("profile.chats")}
             color={user.conversations >= 26 ? "#F97316" : "#10B981"}
           />
           <View style={s.statSep} />
           <Stat
             n={user.responseRate != null ? `${user.responseRate}%` : "N/A"}
-            label="Response"
+            label={t("profile.response")}
             color="#0EA5E9"
           />
         </View>
@@ -420,7 +474,7 @@ export default function Profile({ navigation, route }) {
                 color="#FFF"
                 style={{ marginRight: 8 }}
               />
-              <Text style={s.editBtnText}>Edit Profile</Text>
+              <Text style={s.editBtnText}>{t("profile.edit_profile")}</Text>
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity
@@ -453,8 +507,8 @@ export default function Profile({ navigation, route }) {
             >
               <Text style={s.premiumIcon}>💎</Text>
               <View style={{ flex: 1 }}>
-                <Text style={s.premiumTitle}>Premium Membership</Text>
-                <Text style={s.premiumSub}>Unlock all features · $3.99/mo</Text>
+                <Text style={s.premiumTitle}>{t("profile.premium_membership")}</Text>
+                <Text style={s.premiumSub}>{t("profile.premium_sub")}</Text>
               </View>
               <Feather
                 name="chevron-right"
@@ -475,7 +529,9 @@ export default function Profile({ navigation, route }) {
                 onPress={() => setActiveTab(i)}
               >
                 <Text style={[s.tabLabel, activeTab === i && s.tabLabelActive]}>
-                  {tab}
+                {tab === "About" ? t("profile.tabs.about")
+                  : tab === "Interests" ? t("profile.tabs.interests")
+                  : t("profile.tabs.more")}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -487,14 +543,13 @@ export default function Profile({ navigation, route }) {
           {activeTab === 0 && (
             <View style={s.tabPane}>
               <View style={s.card}>
-                <CardLabel label="About Me" icon="user" />
+                <CardLabel label={t("profile.about_me")} icon="user" />
                 <Text style={s.bioText}>
-                  {user.bio ||
-                    "No bio added yet. Tell people a bit about yourself!"}
+                  {user.bio || t("profile.no_bio")}
                 </Text>
               </View>
               <View style={s.card}>
-                <CardLabel label="Looking For" icon="search" />
+                <CardLabel label={t("profile.looking_for")} icon="search" />
                 <View style={s.tagsWrap}>
                   {(user.lookingFor || []).map((item) => {
                     const m = LF_META[item] || {
@@ -517,25 +572,25 @@ export default function Profile({ navigation, route }) {
                 </View>
               </View>
               <View style={s.card}>
-                <CardLabel label="Details" icon="info" />
+                <CardLabel label={t("profile.details")} icon="info" />
                 <InfoRow
                   icon="briefcase"
                   value={
                     user.jobTitle || user.company
-                      ? `${user.jobTitle || "Professional"}${user.company ? ` at ${user.company}` : ""}`
-                      : "Experience not specified"
+                      ? `${user.jobTitle || t("profile.professional")}${user.company ? ` ${t("profile.at")} ${user.company}` : ""}`
+                      : t("profile.experience_not_set")
                   }
                 />
                 <InfoRow
                   icon="map-pin"
-                  value={user.city || "City not specified"}
+                  value={user.city || t("profile.city_not_set")}
                 />
                 <InfoRow
                   icon="clock"
                   value={
                     user.availability?.length > 0
                       ? user.availability.join(" · ")
-                      : "Availability not set"
+                      : t("profile.availability_not_set")
                   }
                   last
                 />
@@ -547,8 +602,7 @@ export default function Profile({ navigation, route }) {
             <View style={s.tabPane}>
               <View style={s.interestTopRow}>
                 <Text style={s.interestCount}>
-                  {(user.interests || []).length} of{" "}
-                  {user.isPremium ? "∞" : "30"} interests
+                  {t("profile.interests_count", { count: (user.interests || []).length, max: user.isPremium ? "∞" : "30" })}
                 </Text>
                 <TouchableOpacity
                   style={s.manageBtn}
@@ -560,7 +614,7 @@ export default function Profile({ navigation, route }) {
                     color="#6366F1"
                     style={{ marginRight: 5 }}
                   />
-                  <Text style={s.manageBtnText}>Manage</Text>
+                  <Text style={s.manageBtnText}>{t("profile.manage")}</Text>
                 </TouchableOpacity>
               </View>
               <View style={s.progressTrack}>
@@ -588,10 +642,9 @@ export default function Profile({ navigation, route }) {
                         <Feather name="star" size={28} color="#FFF" />
                       </LinearGradient>
                     </View>
-                    <Text style={s.emptyStateTitle}>No Interests Yet</Text>
+                    <Text style={s.emptyStateTitle}>{t("profile.no_interests_title")}</Text>
                     <Text style={s.emptyStateSub}>
-                      Add your passions so others can find you based on what you
-                      love.
+                      {t("profile.no_interests_desc")}
                     </Text>
                     <TouchableOpacity
                       style={s.emptyStateCTA}
@@ -610,7 +663,7 @@ export default function Profile({ navigation, route }) {
                           color="#FFF"
                           style={{ marginRight: 8 }}
                         />
-                        <Text style={s.emptyStateCTAText}>Add Interests</Text>
+                        <Text style={s.emptyStateCTAText}>{t("profile.add_interests")}</Text>
                       </LinearGradient>
                     </TouchableOpacity>
                   </LinearGradient>
@@ -643,13 +696,13 @@ export default function Profile({ navigation, route }) {
           {activeTab === 2 && (
             <View style={s.tabPane}>
               <View style={s.card}>
-                <CardLabel label="Your Network" icon="users" />
+                <CardLabel label={t("profile.your_network")} icon="users" />
                 <View style={s.meterRow}>
                   <Text style={s.meterBig}>{user.conversations || 0}</Text>
-                  <Text style={s.meterOf}> Connections</Text>
+                  <Text style={s.meterOf}> {t("profile.connections")}</Text>
                   <View style={{ flex: 1 }} />
                   {user.conversations > 0 && (
-                    <Text style={s.meterRemain}>Growing fast!</Text>
+                    <Text style={s.meterRemain}>{t("profile.growing_fast")}</Text>
                   )}
                 </View>
                 {/* Removed artificial 30 cap meter track, relying on pure numbers for cleaner look */}
@@ -658,22 +711,22 @@ export default function Profile({ navigation, route }) {
                   onPress={() => navigation.navigate("Premium")}
                 >
                   <Text style={s.meterUpgrade}>
-                    {user.isPremium ? "View Your Premium Benefits →" : "Unlock unlimited with Premium →"}
+                    {user.isPremium ? t("profile.view_benefits") : t("profile.unlock_unlimited")}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <View style={s.card}>
-                <CardLabel label="Membership" icon="award" />
+                <CardLabel label={t("profile.membership")} icon="award" />
                 <InfoRow
                   icon="award"
-                  value={user.isPremium ? "Premium Member" : "Standard Member"}
+                  value={user.isPremium ? t("profile.premium_member") : t("profile.standard_member")}
                   onPress={() => navigation.navigate("Premium")}
                   last
                 />
               </View>
               <View style={s.card}>
-                <CardLabel label="Share Profile" icon="share-2" />
+                <CardLabel label={t("profile.share_profile_card")} icon="share-2" />
                 <TouchableOpacity
                   style={s.qrBox}
                   activeOpacity={0.8}
@@ -681,13 +734,13 @@ export default function Profile({ navigation, route }) {
                     const url = `https://bondus.vercel.app/${user.username}`;
                     try {
                       await Share.share({
-                        message: `Check out my profile on BondUs! ${url}`,
+                        message: t("profile.share_msg", { url: url }),
                         url: url,
                       });
                     } catch (error) {
                       // Fallback to clipboard
                       await Clipboard.setStringAsync(url);
-                      showToast("Copied", "Profile link copied!", "success");
+                      showToast(t("profile.copied"), t("profile.link_copied"), "success");
                     }
                   }}
                 >
@@ -697,7 +750,7 @@ export default function Profile({ navigation, route }) {
                   >
                     <Feather name="link-2" size={32} color="#6366F1" />
                     <Text style={s.qrUrl}>bondus.vercel.app/{user.username}</Text>
-                    <Text style={s.tapToShare}>Tap to share</Text>
+                    <Text style={s.tapToShare}>{t("profile.tap_to_share")}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -719,7 +772,7 @@ export default function Profile({ navigation, route }) {
             <View style={s.sheet}>
               <View style={s.sheetHandle} />
               <View style={s.sheetHeader}>
-                <Text style={s.sheetTitle}>Edit Profile</Text>
+                <Text style={s.sheetTitle}>{t("profile.edit.title")}</Text>
                 <TouchableOpacity onPress={() => setEditModal(false)}>
                   <Feather name="x" size={22} color="#94A3B8" />
                 </TouchableOpacity>
@@ -730,7 +783,7 @@ export default function Profile({ navigation, route }) {
               >
                 {/* ── PHOTO PICKERS ── */}
                 <View style={s.editPhotosSection}>
-                  <Text style={s.eLabel}>Profile Imagery</Text>
+                  <Text style={s.eLabel}>{t("profile.edit.imagery")}</Text>
 
                   {/* Banner Picker */}
                   <TouchableOpacity
@@ -749,13 +802,13 @@ export default function Profile({ navigation, route }) {
                     />
                     <View style={s.pickerOverlay}>
                       <Feather name="camera" size={20} color="#FFF" />
-                      <Text style={s.pickerText}>Change Cover</Text>
+                      <Text style={s.pickerText}>{t("profile.edit.change_cover")}</Text>
                     </View>
                     {isUploading && uploadingTarget === "banner" && (
                       <View style={s.uploadOverlayRect}>
                         <ActivityIndicator size="small" color="#FFFFFF" />
                         <Text style={s.uploadOverlayText}>
-                          Uploading cover...
+                          {t("profile.edit.uploading_cover")}
                         </Text>
                       </View>
                     )}
@@ -787,54 +840,79 @@ export default function Profile({ navigation, route }) {
                       {isUploading && uploadingTarget === "avatar" && (
                         <View style={s.uploadOverlayCircle}>
                           <ActivityIndicator size="small" color="#FFFFFF" />
-                          <Text style={s.uploadOverlayText}>Uploading...</Text>
+                          <Text style={s.uploadOverlayText}>{t("profile.edit.uploading")}</Text>
                         </View>
                       )}
                     </TouchableOpacity>
                     <View style={s.avPickerInfo}>
-                      <Text style={s.avPickerTitle}>Profile Photo</Text>
+                      <Text style={s.avPickerTitle}>{t("profile.edit.profile_photo")}</Text>
                       <Text style={s.avPickerSub}>
-                        Professional & clear photos perform best.
+                        {t("profile.edit.photo_desc")}
                       </Text>
                     </View>
                   </View>
                 </View>
 
                 <EField
-                  label="Full Name"
+                  label={t("profile.edit.full_name")}
                   icon="user"
                   value={form.name || ""}
                   onChange={(v) => setForm((f) => ({ ...f, name: v }))}
                 />
                 <EField
-                  label="Username"
+                  label={t("profile.edit.username")}
                   icon="at-sign"
                   value={form.username || ""}
                   onChange={(v) => setForm((f) => ({ ...f, username: v }))}
                   lower
                 />
                 <EField
-                  label="Job Title"
+                  label={t("profile.edit.job_title")}
                   icon="briefcase"
                   value={form.jobTitle || ""}
                   onChange={(v) => setForm((f) => ({ ...f, jobTitle: v }))}
                 />
                 <EField
-                  label="Company"
+                  label={t("profile.edit.company")}
                   icon="home"
                   value={form.company || ""}
                   onChange={(v) => setForm((f) => ({ ...f, company: v }))}
                 />
-                <EField
-                  label="City"
-                  icon="map-pin"
-                  value={form.city || ""}
-                  onChange={(v) => setForm((f) => ({ ...f, city: v }))}
-                />
+                <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    <LocationAutocomplete
+                      label={t("profile.edit.city")}
+                      icon="map-pin"
+                      value={form.city || ""}
+                      onChange={(v) => setForm((f) => ({ ...f, city: v }))}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    onPress={detectLocation}
+                    disabled={gpsLoading}
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 12,
+                      backgroundColor: "#F1F5F9",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderWidth: 1.5,
+                      borderColor: "#E2E8F0",
+                      marginBottom: 16,
+                    }}
+                  >
+                    {gpsLoading ? (
+                      <ActivityIndicator size="small" color="#6366F1" />
+                    ) : (
+                      <Feather name="navigation" size={18} color="#6366F1" />
+                    )}
+                  </TouchableOpacity>
+                </View>
 
                 {/* ── BIRTHDAY EDIT ── */}
                 <View style={s.eField}>
-                  <Text style={s.eLabel}>Birthday</Text>
+                  <Text style={s.eLabel}>{t("profile.edit.birthday")}</Text>
                   <View style={{ flexDirection: "row", gap: 10 }}>
                     <TextInput
                       style={[s.eRow, { flex: 1, textAlign: "center" }]}
@@ -892,7 +970,7 @@ export default function Profile({ navigation, route }) {
 
                 {/* ── GENDER EDIT ── */}
                 <View style={s.eField}>
-                  <Text style={s.eLabel}>Gender</Text>
+                  <Text style={s.eLabel}>{t("profile.edit.gender")}</Text>
                   <View
                     style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}
                   >
@@ -930,7 +1008,7 @@ export default function Profile({ navigation, route }) {
                 </View>
 
                 <EField
-                  label="Bio"
+                  label={t("profile.edit.bio")}
                   icon="edit-3"
                   value={form.bio || ""}
                   onChange={(v) => setForm((f) => ({ ...f, bio: v }))}
@@ -939,7 +1017,7 @@ export default function Profile({ navigation, route }) {
 
                 {/* ── LOOKING FOR ── */}
                 <View style={s.eField}>
-                  <Text style={s.eLabel}>Looking For</Text>
+                  <Text style={s.eLabel}>{t("profile.edit.looking_for")}</Text>
                   <View
                     style={{
                       flexDirection: "row",
@@ -1000,7 +1078,7 @@ export default function Profile({ navigation, route }) {
 
                 {/* ── AVAILABILITY ── */}
                 <View style={s.eField}>
-                  <Text style={s.eLabel}>Availability</Text>
+                  <Text style={s.eLabel}>{t("profile.edit.availability")}</Text>
                   <View
                     style={{
                       flexDirection: "row",
@@ -1073,7 +1151,7 @@ export default function Profile({ navigation, route }) {
                   end={{ x: 1, y: 0 }}
                   style={s.sheetSaveGrad}
                 >
-                  <Text style={s.sheetSaveText}>Save Changes</Text>
+                  <Text style={s.sheetSaveText}>{t("profile.edit.save")}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -1096,7 +1174,7 @@ export default function Profile({ navigation, route }) {
 
             {/* Header */}
             <View style={s.sheetHeader}>
-              <Text style={s.sheetTitle}>Share Profile</Text>
+              <Text style={s.sheetTitle}>{t("profile.share_profile")}</Text>
               <TouchableOpacity onPress={() => setShareModal(false)}>
                 <Feather name="x" size={22} color="#94A3B8" />
               </TouchableOpacity>
@@ -1158,8 +1236,8 @@ export default function Profile({ navigation, route }) {
                     `bondus.vercel.app/${user.username}`,
                   );
                   showToast(
-                    "Copied! ✅",
-                    "Link copied to clipboard",
+                    t("profile.copied"),
+                    t("profile.link_copied"),
                     "success",
                   );
                 }}

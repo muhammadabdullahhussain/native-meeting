@@ -279,6 +279,11 @@ exports.updateSettings = catchAsync(async (req, res, next) => {
             updateObj[`settings.notifications.${k}`] = notifications[k];
         });
     }
+    if (req.body.privacy) {
+        Object.keys(req.body.privacy).forEach(k => {
+            updateObj[`settings.privacy.${k}`] = req.body.privacy[k];
+        });
+    }
 
     const user = await User.findByIdAndUpdate(
         req.user.id,

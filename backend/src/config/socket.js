@@ -15,18 +15,23 @@ const init = (server) => {
         console.log(`🔌 New client connected: ${socket.id}`);
 
         // Join a private room and set online
-        socket.on('join', (userId) => {
+        socket.on('join', async (userId) => {
             if (userId) {
                 currentUserId = userId;
                 socket.join(userId);
                 console.log(`👤 User ${userId} joined their private room.`);
 
-                // Set user online globally
-                const User = require('../models/User');
-                User.findByIdAndUpdate(userId, { onlineStatus: true }).catch(e => console.error(e));
-
-                // Broadcast presence to all (simple) or friends (advanced)
-                io.emit('user_presence', { userId, status: 'online' });
+                try {
+                    const User = require('../models/User');
+                    const user = await User.findByIdAndUpdate(userId, { onlineStatus: true }, { new: true });
+                    
+                    // Broadcast presence only if privacy setting allows
+                    if (user?.settings?.privacy?.showOnlineStatus !== false) {
+                        io.emit('user_presence', { userId, status: 'online' });
+                    }
+                } catch (e) {
+                    console.error('Socket join Error:', e);
+                }
             }
         });
 
@@ -36,7 +41,10 @@ const init = (server) => {
             try {
                 const User = require('../models/User');
                 const user = await User.findById(userId);
-                if (callback) callback(user?.onlineStatus ? 'online' : 'offline');
+                
+                // respect privacy setting
+                const isOnline = user?.onlineStatus && user?.settings?.privacy?.showOnlineStatus !== false;
+                if (callback) callback(isOnline ? 'online' : 'offline');
             } catch (err) {
                 if (callback) callback('offline');
             }

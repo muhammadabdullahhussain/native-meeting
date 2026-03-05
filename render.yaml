@@ -10,7 +10,7 @@ services:
         value: production
 
   - type: web
-    name: interesta-backend
+    name: bondus-backend
     env: node
     plan: free
     buildCommand: cd backend && npm install
