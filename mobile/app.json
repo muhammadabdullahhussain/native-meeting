@@ -23,7 +23,6 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "softwareKeyboardLayoutMode": "pan",
       "package": "com.alihussain2alikhan.bondus"
     },
     "web": {
