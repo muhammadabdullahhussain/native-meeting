@@ -120,7 +120,7 @@ export default function Pricing() {
             Go Premium
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Unlock the full Interesta experience — no limits, no restrictions,
+            Unlock the full BondUs experience — no limits, no restrictions,
             pure connection.
           </p>
         </motion.div>

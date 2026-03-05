@@ -102,8 +102,8 @@ export default function Premium({ navigation }) {
                     <Text style={s.heroTitle}>{user?.isPremium ? 'Premium Active' : 'Go Premium'}</Text>
                     <Text style={s.heroSub}>
                         {user?.isPremium
-                            ? "You're enjoying the elite Interesta experience with no limits. Thank you for being a part of our premium community!"
-                            : "Unlock the full Interesta experience — no limits, no restrictions, pure connection."}
+                            ? "You're enjoying the elite BondUs experience with no limits. Thank you for being a part of our premium community!"
+                            : "Unlock the full BondUs experience — no limits, no restrictions, pure connection."}
                     </Text>
 
                     {/* Floating stats */}

@@ -12,8 +12,8 @@ import {
 export default function Help() {
   const faqs = [
     {
-      q: "Is Interesta free?",
-      a: "Yes! Interesta is free to download and use. We offer optional premium features for power users.",
+      q: "Is BondUs free?",
+      a: "Yes! BondUs is free to download and use. We offer optional premium features for power users.",
     },
     {
       q: "How do I verify my profile?",

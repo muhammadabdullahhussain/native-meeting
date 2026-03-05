@@ -13,8 +13,8 @@ if (Platform.OS === 'android') {
 
 const faqs = [
     {
-        q: 'How does Interesta match me with others?',
-        a: 'Interesta uses the preferences you set in Settings to show you nearby users who share similar interests. Ensure your profile is fully complete for the best experience.'
+        q: 'How does BondUs match me with others?',
+        a: 'BondUs uses the preferences you set in Settings to show you nearby users who share similar interests. Ensure your profile is fully complete for the best experience.'
     },
     {
         q: 'How do I change my location radius?',

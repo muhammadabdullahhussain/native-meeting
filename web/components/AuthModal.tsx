@@ -99,7 +99,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
                                 {isLogin ? "Welcome back" : "Create account"}
                             </h2>
                             <p className="text-gray-400 mt-2">
-                                {isLogin ? "Sign in to your Interesta account" : "Join the tribe and start connecting"}
+                                {isLogin ? "Sign in to your BondUs account" : "Join the tribe and start connecting"}
                             </p>
                         </div>
 

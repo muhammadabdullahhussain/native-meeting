@@ -163,7 +163,7 @@ export default function Login({ navigation }) {
           <View style={styles.logoIcon}>
             <Text style={styles.logoEmoji}>🔗</Text>
           </View>
-          <Text style={styles.logoName}>Interesta</Text>
+          <Text style={styles.logoName}>BondUs</Text>
         </View>
 
         <Text style={styles.heroTitle}>

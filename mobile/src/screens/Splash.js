@@ -6,6 +6,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { theme } from "../theme/theme";
@@ -131,18 +132,17 @@ export default function Splash({ navigation }) {
       >
         {/* Logo Icon */}
         <View style={styles.logoRing}>
-          <LinearGradient
-            colors={["#3B82F6", "#7C3AED"]}
-            style={styles.logoGrad}
-          >
-            <Text style={styles.logoEmoji}>🔗</Text>
-          </LinearGradient>
+          <Image
+            source={require("../../assets/logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
 
-        <Text style={styles.appName}>Interesta</Text>
+        <Text style={styles.appName}>BondUs</Text>
 
         <Animated.View style={{ opacity: taglineAnim }}>
-          <Text style={styles.tagline}>Connect through what you love</Text>
+          <Text style={styles.tagline}>Building Stronger Connections</Text>
           <View style={styles.dotsRow}>
             {["Chess", "Coffee", "Hiking"].map((t, i) => (
               <View key={i} style={styles.tagChip}>
@@ -219,13 +219,11 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 12,
   },
-  logoGrad: {
-    flex: 1,
+  logoImage: {
+    width: "100%",
+    height: "100%",
     borderRadius: 52,
-    justifyContent: "center",
-    alignItems: "center",
   },
-  logoEmoji: { fontSize: 44 },
   appName: {
     fontSize: 44,
     fontFamily: theme.typography.fontFamily.bold,

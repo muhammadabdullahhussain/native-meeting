@@ -473,7 +473,7 @@ export default function Settings({ navigation }) {
                     </TouchableOpacity>
                 </View>
 
-                <Text style={s.version}>Interesta v1.0.0 · Made with ❤️</Text>
+                <Text style={s.version}>BondUs v1.0.0 · Made with ❤️</Text>
                 <View style={{ height: 40 }} />
             </ScrollView>
 

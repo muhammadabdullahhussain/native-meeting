@@ -406,13 +406,13 @@ export default function Connections({ navigation, route }) {
   };
 
   const copyInviteLink = async () => {
-    const inviteUrl = `https://interesta.vercel.app/join?ref=${authUser?.referralCode || authUser?.id}`;
+    const inviteUrl = `https://bondus.vercel.app/join?ref=${authUser?.referralCode || authUser?.id}`;
     try {
       if (Platform.OS === "web") {
         await Clipboard.setString(inviteUrl);
       } else {
         await Share.share({
-          message: `Hey! Join me on Interesta to find people with shared interests. Use my link: ${inviteUrl}`,
+          message: `Hey! Join me on BondUs to find people with shared interests. Use my link: ${inviteUrl}`,
         });
       }
       showToast(

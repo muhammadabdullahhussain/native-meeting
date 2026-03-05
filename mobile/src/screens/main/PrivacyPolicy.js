@@ -31,7 +31,7 @@ export default function PrivacyPolicy({ navigation }) {
                 <View style={s.card}>
                     <Text style={s.sectionTitle}>1. Information We Collect</Text>
                     <Text style={s.paragraph}>
-                        When you use Interesta, we collect your name, email address, profile photos, interests, and location data. Your location is used to power our core "discovery" feature and match you with nearby users.
+                        When you use BondUs, we collect your name, email address, profile photos, interests, and location data. Your location is used to power our core "discovery" feature and match you with nearby users.
                     </Text>
 
                     <Text style={s.sectionTitle}>2. How We Use Information</Text>

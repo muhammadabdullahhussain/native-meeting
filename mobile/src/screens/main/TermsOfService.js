@@ -29,9 +29,9 @@ export default function TermsOfService({ navigation }) {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
                 <View style={s.card}>
-                    <Text style={s.sectionTitle}>1. Welcome to Interesta</Text>
+                    <Text style={s.sectionTitle}>1. Welcome to BondUs</Text>
                     <Text style={s.paragraph}>
-                        By using the Interesta application, you agree to these Terms of Service. Please read them carefully. We provide a platform for users to connect based on shared interests and geographical proximity.
+                        By using the BondUs application, you agree to these Terms of Service. Please read them carefully. We provide a platform for users to connect based on shared interests and geographical proximity.
                     </Text>
 
                     <Text style={s.sectionTitle}>2. Account Registration</Text>
@@ -56,7 +56,7 @@ export default function TermsOfService({ navigation }) {
 
                     <Text style={s.sectionTitle}>6. Liability</Text>
                     <Text style={s.paragraph}>
-                        Interesta is provided "as is". We do not guarantee that the app will be uninterrupted or error-free. We are not liable for any interactions you have with other users outside of the app.
+                        BondUs is provided "as is". We do not guarantee that the app will be uninterrupted or error-free. We are not liable for any interactions you have with other users outside of the app.
                     </Text>
                 </View>
                 <View style={{ height: 40 }} />

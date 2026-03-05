@@ -32,7 +32,7 @@ export default function Legal() {
             <p>
               <strong>1. Acceptance of Terms</strong>
               <br />
-              By accessing Interesta, you agree to comply with these terms.
+              By accessing BondUs, you agree to comply with these terms.
             </p>
             <p>
               <strong>2. User Conduct</strong>
@@ -45,7 +45,7 @@ export default function Legal() {
               <strong>3. Content</strong>
               <br />
               You retain ownership of the content you post, but you grant
-              Interesta a license to use, display, and distribute your content.
+              BondUs a license to use, display, and distribute your content.
             </p>
           </div>
         </section>

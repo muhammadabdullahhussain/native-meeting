@@ -3,7 +3,7 @@
     "redirects": [
         {
             "source": "/(.*)",
-            "destination": "https://interesta-web.vercel.app/$1",
+            "destination": "https://bondus-web.vercel.app/$1",
             "permanent": true
         }
     ]

@@ -69,7 +69,7 @@ export default function Home() {
   const testimonials = [
     {
       quote:
-        "I moved to a new city and made friends in my first week. Interesta feels genuinely human.",
+        "I moved to a new city and made friends in my first week. BondUs feels genuinely human.",
       name: "Areeba K.",
       role: "Designer · Lahore",
       badge: "Community Lead",
@@ -251,7 +251,7 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                How Interesta Works
+                How BondUs Works
               </h2>
               <p className="text-gray-400 text-lg max-w-2xl mx-auto">
                 Three simple steps to go from scrolling alone to building your

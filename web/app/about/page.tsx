@@ -66,7 +66,7 @@ export default function About() {
               </span>
             </h1>
             <p className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto">
-              Interesta isn&apos;t just another social app. It&apos;s a movement
+              BondUs isn&apos;t just another social app. It&apos;s a movement
               to bring people back together in the real world, based on shared
               passions and genuine interests.
             </p>
@@ -96,7 +96,7 @@ export default function About() {
                 </p>
                 <p>
                   We prioritize meaningful interactions over mindless scrolling.
-                  Every feature in Interesta is designed to get you offline and
+                  Every feature in BondUs is designed to get you offline and
                   into the real world.
                 </p>
               </div>
@@ -106,7 +106,7 @@ export default function About() {
                 <div className="w-24 h-24 bg-gradient-to-br from-primary to-purple-500 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-primary/30">
                   <span className="text-5xl font-bold text-white">I</span>
                 </div>
-                <h3 className="text-2xl font-bold text-white">Interesta HQ</h3>
+                <h3 className="text-2xl font-bold text-white">BondUs HQ</h3>
                 <p className="text-gray-400 mt-2">
                   Built with ❤️ for the community
                 </p>

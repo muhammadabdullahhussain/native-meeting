@@ -91,7 +91,7 @@ export default function Footer() {
                 I
               </div>
               <span className="text-2xl font-bold tracking-tight text-white">
-                Interesta<span className="text-primary">.</span>
+                BondUs<span className="text-primary">.</span>
               </span>
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
@@ -161,7 +161,7 @@ export default function Footer() {
 
         <div className="border-t border-white/10 mt-12 pt-8 text-center md:text-left flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 gap-4">
           <div>
-            <p>&copy; {currentYear} Interesta Inc. All rights reserved.</p>
+            <p>&copy; {currentYear} BondUs Inc. All rights reserved.</p>
             <p className="text-xs text-gray-600 mt-1">
               Crafted for authentic people and meaningful local communities.
             </p>

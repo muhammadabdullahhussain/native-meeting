@@ -717,10 +717,10 @@ export default function Profile({ navigation, route }) {
                   style={s.qrBox}
                   activeOpacity={0.8}
                   onPress={async () => {
-                    const url = `https://interesta.vercel.app/${user.username}`;
+                    const url = `https://bondus.vercel.app/${user.username}`;
                     try {
                       await Share.share({
-                        message: `Check out my profile on Interesta! ${url}`,
+                        message: `Check out my profile on BondUs! ${url}`,
                         url: url,
                       });
                     } catch (error) {
@@ -735,7 +735,7 @@ export default function Profile({ navigation, route }) {
                     style={s.qrInner}
                   >
                     <Feather name="link-2" size={32} color="#6366F1" />
-                    <Text style={s.qrUrl}>interesta.vercel.app/{user.username}</Text>
+                    <Text style={s.qrUrl}>bondus.vercel.app/{user.username}</Text>
                     <Text style={s.tapToShare}>Tap to share</Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -1188,13 +1188,13 @@ export default function Profile({ navigation, route }) {
                 <Feather name="link-2" size={16} color="#6366F1" />
               </View>
               <Text style={s.shareLinkText} numberOfLines={1}>
-                interesta.vercel.app/{user.username}
+                bondus.vercel.app/{user.username}
               </Text>
               <TouchableOpacity
                 style={s.shareLinkCopyBtn}
                 onPress={async () => {
                   await Clipboard.setStringAsync(
-                    `interesta.vercel.app/${user.username}`,
+                    `bondus.vercel.app/${user.username}`,
                   );
                   showToast(
                     "Copied! ✅",
@@ -1254,12 +1254,12 @@ export default function Profile({ navigation, route }) {
                   onPress={async () => {
                     // Updated to use the new website structure
                     const profileUrl = `http://${LOCAL_IP}:5001/join?code=${user.referralCode || ""}`;
-                    const shareText = `Check out ${user.name}'s profile on Interesta! Join me here: ${profileUrl}`;
+                    const shareText = `Check out ${user.name}'s profile on BondUs! Join me here: ${profileUrl}`;
                     try {
                       await Share.share({
                         message: shareText,
                         url: profileUrl,
-                        title: "Join me on Interesta",
+                        title: "Join me on BondUs",
                       });
                     } catch (e) {
                       showToast("Error", "Could not share", "error");

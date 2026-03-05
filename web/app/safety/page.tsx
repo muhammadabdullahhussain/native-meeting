@@ -23,7 +23,7 @@ export default function Safety() {
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
             Your safety is our #1 priority. We use advanced technology and human
-            moderation to keep Interesta safe.
+            moderation to keep BondUs safe.
           </p>
         </motion.div>
       </div>

@@ -1,6 +1,6 @@
 export default async function sitemap() {
   const site =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://interesta.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL || "https://bondus.vercel.app";
   const now = new Date();
   const routes = ["", "about", "help", "join", "legal", "pricing", "safety"];
   return routes.map((r) => ({

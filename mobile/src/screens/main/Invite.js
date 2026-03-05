@@ -39,7 +39,7 @@ export default function Invite({ navigation }) {
   const handleShare = async () => {
     try {
       const testLink = `http://172.20.1.78:5001/join?code=${referralCode}`;
-      const message = `Join me on Interesta! Use my code ${referralCode} to unlock premium features: ${testLink}`;
+      const message = `Join me on BondUs! Use my code ${referralCode} to unlock premium features: ${testLink}`;
       const result = await Share.share({
         message,
         url: testLink, // iOS only

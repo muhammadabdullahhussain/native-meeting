@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <head>
-        <title>Interesta – Connect with your tribe</title>
+        <title>BondUs – Connect with your tribe</title>
         <meta
           name="description"
           content="Modern social discovery for real people, nearby."

@@ -167,7 +167,7 @@ export default function UserProfile({ route, navigation }) {
                 {/* Identity (Centered) */}
                 <View style={s.identityBox}>
                     <View style={s.nameRow}>
-                        <Text style={s.nameText}>{user.name || 'Interesta User'}</Text>
+                        <Text style={s.nameText}>{user.name || 'BondUs User'}</Text>
                         {user.isVerified && (
                             <View style={s.verifiedBadge}>
                                 <Feather name="check" size={10} color="#FFF" />

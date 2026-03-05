@@ -47,7 +47,7 @@ function JoinInner() {
         return "http://localhost:5001";
       }
     }
-    return "https://interesta-backend.onrender.com";
+    return "https://bondus-backend.onrender.com";
   }, []);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ function JoinInner() {
     setTryingOpen(true);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
-    const deepLink = `interesta://join?code=${encodeURIComponent(code)}`;
+    const deepLink = `bondus://join?code=${encodeURIComponent(code)}`;
     const fallbackUrl = "/";
 
     const start = Date.now();
@@ -143,8 +143,8 @@ function JoinInner() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Join me on Interesta",
-          text: "Use my referral code to join Interesta.",
+          title: "Join me on BondUs",
+          text: "Use my referral code to join BondUs.",
           url: shareUrl,
         });
       } catch {
@@ -176,7 +176,7 @@ function JoinInner() {
         </div>
 
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-          Join <span className="text-primary">{inviterName}</span> on Interesta
+          Join <span className="text-primary">{inviterName}</span> on BondUs
         </h1>
         <p className="text-gray-300/90 mb-6 leading-relaxed">
           Make real connections with people nearby who share your interests.

@@ -68,16 +68,16 @@ app.use("/api/interests", interestRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Interesta API is running",
+    message: "BondUs API is running",
     version: "1.0.0",
-    frontend: "https://interesta.vercel.app"
+    frontend: "https://bondus.vercel.app"
   });
 });
 
 // Redirect legacy join links to Next.js app
 app.get("/join", (req, res) => {
   const { code } = req.query;
-  const redirectUrl = `https://interesta.vercel.app/join${code ? `?code=${code}` : ""}`;
+  const redirectUrl = `https://bondus.vercel.app/join${code ? `?code=${code}` : ""}`;
   res.redirect(redirectUrl);
 });
 

@@ -44,7 +44,7 @@ const apiClient = axios.create({
 
 // Interceptor to add JWT token to requests
 apiClient.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem("@interesta_auth_token");
+  const token = await AsyncStorage.getItem("@bondus_auth_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -58,8 +58,8 @@ apiClient.interceptors.response.use(
     const status = error?.response?.status;
     if (status === 401) {
       try {
-        await AsyncStorage.removeItem("@interesta_auth_token");
-        await AsyncStorage.removeItem("@interesta_user");
+        await AsyncStorage.removeItem("@bondus_auth_token");
+        await AsyncStorage.removeItem("@bondus_user");
       } catch {}
       if (unauthorizedHandler) {
         try {

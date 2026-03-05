@@ -27,8 +27,8 @@ import { registerForPushNotificationsAsync } from "../utils/notifications";
 
 const AuthContext = createContext({});
 
-const AUTH_TOKEN_KEY = "@interesta_auth_token";
-const AUTH_USER_KEY = "@interesta_user";
+const AUTH_TOKEN_KEY = "@bondus_auth_token";
+const AUTH_USER_KEY = "@bondus_user";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

@@ -49,7 +49,7 @@ export default function NavBar() {
               I
             </div>
             <span className="text-2xl font-bold tracking-tight text-white">
-              Interesta<span className="text-primary">.</span>
+              BondUs<span className="text-primary">.</span>
             </span>
           </Link>
 

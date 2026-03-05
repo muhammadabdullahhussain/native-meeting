@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 /**
- * Global Configuration for Interesta Platform
+ * Global Configuration for BondUs Platform
  * CENTRALIZED 10,000% RELIABILITY CONSTANTS
  */
 
@@ -14,7 +14,7 @@ if (debuggerHost) {
     DYNAMIC_IP = debuggerHost.split(':')[0];
 }
 
-const PROD_URL = 'https://interesta-backend.onrender.com';
+const PROD_URL = 'https://bondus-backend.onrender.com';
 
 export const LOCAL_IP = DYNAMIC_IP;
 
