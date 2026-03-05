@@ -109,7 +109,7 @@ export default function Login({ navigation }) {
         return;
       }
 
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
       if (!cleanPassword || !passwordRegex.test(cleanPassword)) {
         setError("Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.");
         return;
