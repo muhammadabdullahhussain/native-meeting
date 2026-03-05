@@ -75,6 +75,11 @@ export default function Connections({ navigation, route }) {
   const [myGroups, setMyGroups] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [activeTab, setActiveTab] = useState("Messages");
+  const connectionTabs = [
+    { id: "Messages", label: t("connections.tabs.messages", "Messages") },
+    { id: "Requests", label: t("connections.tabs.requests", "Requests") },
+    { id: "Groups", label: t("connections.tabs.groups", "Groups") },
+  ];
   const [searchQuery, setSearchQuery] = useState("");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumModalType, setPremiumModalType] = useState("generic");
@@ -262,6 +267,12 @@ export default function Connections({ navigation, route }) {
     return base;
   };
 
+  const filterOptions = [
+    { id: "All", label: t("connections.filter.all", "All") },
+    { id: "Unread", label: t("connections.filter.unread", "Unread") },
+    { id: "Online", label: t("connections.filter.online", "Online") },
+  ];
+
   const openChatOptions = (chat) => {
     setSelectedChat(chat);
     setChatOptionsVisible(true);
@@ -363,7 +374,7 @@ export default function Connections({ navigation, route }) {
       }
       fetchData();
     } catch (err) {
-      showToast("Error", err.message || "Failed to send request", "error");
+      showToast(t("common.error"), err.message || t("connections.request.failed_join"), "error");
     }
   };
 
@@ -1138,15 +1149,14 @@ export default function Connections({ navigation, route }) {
 
         {/* Search Bar */}
         <View style={s.searchBar}>
-          <Feather
-            name="search"
-            size={15}
-            color="#94A3B8"
-            style={{ marginRight: 10 }}
-          />
+          <Feather name="search" size={16} color="#94A3B8" />
           <TextInput
             style={s.searchInput}
-            placeholder={t("connections.search_placeholder")}
+            placeholder={
+              activeTab === "Messages"
+                ? t("connections.search_chats_placeholder", "Search chats...")
+                : t("connections.search_groups_placeholder", "Search groups...")
+            }
             placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -1159,41 +1169,37 @@ export default function Connections({ navigation, route }) {
         </View>
 
         {/* Tab bar */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.tabBar}
-          style={{ marginBottom: 0 }}
-        >
-          {TABS.map((tab) => (
-            <TouchableOpacity
-              key={tab.id}
-              style={[s.tabPill, activeTab === tab.id && s.tabPillActive]}
-              onPress={() => setActiveTab(tab.id)}
-              activeOpacity={0.75}
-            >
-              <Text
-                style={[s.tabLabel, activeTab === tab.id && s.tabLabelActive]}
+        <View style={s.tabScrollWrapper}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabsRow}>
+            {TABS.map((tab) => (
+              <TouchableOpacity
+                key={tab.id}
+                style={[s.tabPill, activeTab === tab.id && s.tabPillActive]}
+                onPress={() => setActiveTab(tab.id)}
+                activeOpacity={0.75}
               >
-                {tab.label}
-              </Text>
-              {tab.badge > 0 && (
-                <View
-                  style={[s.tabBadge, activeTab === tab.id && s.tabBadgeActive]}
-                >
-                  <Text
-                    style={[
-                      s.tabBadgeText,
-                      activeTab === tab.id && { color: "#6366F1" },
-                    ]}
-                  >
-                    {tab.badge}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text style={[s.tabLabel, activeTab === tab.id && s.tabLabelActive]}>
+                  {tab.label}
+                </Text>
+                {tab.id === "Messages" && totalUnread > 0 && (
+                  <View style={[s.tabBadge, activeTab === tab.id && s.tabBadgeActive]}>
+                    <Text style={[s.tabBadgeText, activeTab === tab.id && { color: "#6366F1" }]}>{totalUnread}</Text>
+                  </View>
+                )}
+                {tab.id === "Requests" && requests.length > 0 && (
+                  <View style={[s.tabBadge, activeTab === tab.id && s.tabBadgeActive]}>
+                    <Text style={[s.tabBadgeText, activeTab === tab.id && { color: "#6366F1" }]}>{requests.length}</Text>
+                  </View>
+                )}
+                {tab.id === "Groups" && myJoinedGroups?.length > 0 && (
+                  <View style={[s.tabBadge, activeTab === tab.id && s.tabBadgeActive]}>
+                    <Text style={[s.tabBadgeText, activeTab === tab.id && { color: "#6366F1" }]}>{myJoinedGroups.length}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       </LinearGradient>
 
       {activeTab === "Messages" && (
@@ -1318,10 +1324,14 @@ export default function Connections({ navigation, route }) {
 
               {filteredChats(chats).length === 0 && (
                 <EmptyState
-                  icon="message-circle"
-                  title={t("connections.empty.no_convos_title")}
-                  description={t("connections.empty.no_convos_desc")}
-                  actionLabel={t("connections.empty.find_people_btn")}
+                  icon="message-square"
+                  title={t("connections.no_chats_title")}
+                  description={
+                    searchQuery
+                      ? t("connections.no_results_desc")
+                      : t("connections.no_chats_desc")
+                  }
+                  actionLabel={t("connections.discover_people_action")}
                   onAction={() => navigation.navigate("Discover")}
                 />
               )}
@@ -1348,15 +1358,15 @@ export default function Connections({ navigation, route }) {
               renderItem={renderRequest}
               contentContainerStyle={s.listContent}
               showsVerticalScrollIndicator={false}
-              ListEmptyComponent={() => (
+              ListEmptyComponent={
                 <EmptyState
-                  icon="inbox"
-                  title={t("connections.empty.no_requests_title")}
-                  description={t("connections.empty.no_requests_desc")}
-                  actionLabel={t("connections.empty.discover_people_btn")}
+                  icon="user-plus"
+                  title={t("connections.no_requests_title", "No pending requests")}
+                  description={t("connections.no_requests_desc", "When someone wants to connect with you, it will show up here.")}
+                  actionLabel={t("connections.discover_people_action")}
                   onAction={() => navigation.navigate("Discover")}
                 />
-              )}
+              }
             />
           )}
         </View>

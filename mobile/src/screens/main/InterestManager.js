@@ -9,6 +9,7 @@ import {
   Platform,
   StatusBar,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -79,6 +80,7 @@ const buildMergedCategories = (remoteCategories = []) => {
 export default function InterestManager({ navigation }) {
   const { user: authUser, updateUser } = useAuth();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const safeTop =
     Platform.OS === "android" ? StatusBar.currentHeight || 0 : insets.top;
@@ -111,8 +113,8 @@ export default function InterestManager({ navigation }) {
         if (!isMounted) return;
         setCategories(buildMergedCategories([]));
         showToast(
-          "Info",
-          "Using built-in interests. Server list could not be loaded.",
+          t("common.info", "Info"),
+          t("interests_manager.server_load_failed", "Using built-in interests. Server list could not be loaded."),
           "info",
         );
       }
@@ -145,8 +147,8 @@ export default function InterestManager({ navigation }) {
 
     if (!isPremium) {
       showToast(
-        "Premium Only",
-        "Custom tags are available for premium members only.",
+        t("premium.premium_only", "Premium Only"),
+        t("interests_manager.custom_tags_premium", "Custom tags are available for premium members only."),
         "info",
       );
       return;
@@ -154,8 +156,8 @@ export default function InterestManager({ navigation }) {
 
     if (tag.length < 2 || tag.length > 40) {
       showToast(
-        "Invalid Tag",
-        "Custom tag must be between 2 and 40 characters.",
+        t("interests_manager.invalid_tag", "Invalid Tag"),
+        t("interests_manager.tag_length_error", "Custom tag must be between 2 and 40 characters."),
         "error",
       );
       return;
@@ -163,8 +165,8 @@ export default function InterestManager({ navigation }) {
 
     if (selectedSet.has(toKey(tag))) {
       showToast(
-        "Already Added",
-        "This interest is already in your list.",
+        t("interests_manager.already_added", "Already Added"),
+        t("interests_manager.already_added_msg", "This interest is already in your list."),
         "info",
       );
       return;
@@ -172,8 +174,8 @@ export default function InterestManager({ navigation }) {
 
     if (isFull) {
       showToast(
-        "Limit Reached",
-        "Please remove an interest before adding a new one.",
+        t("interests_manager.limit_reached", "Limit Reached"),
+        t("interests_manager.limit_reached_msg", "Please remove an interest before adding a new one."),
         "error",
       );
       return;
@@ -194,20 +196,20 @@ export default function InterestManager({ navigation }) {
         ]),
       );
       setCustomTag("");
-      showToast("Success", "Custom interest added.", "success");
+      showToast(t("common.success", "Success"), t("interests_manager.custom_tag_added", "Custom interest added."), "success");
     } catch (error) {
       const msg = error?.message || "Could not add custom interest";
       if (msg.toLowerCase().includes("already exists")) {
         setSelectedInterests((prev) => [...prev, tag]);
         setCustomTag("");
         showToast(
-          "Info",
-          "Custom tag already exists. Added to your list.",
+          t("common.info", "Info"),
+          t("interests_manager.tag_exists_added", "Custom tag already exists. Added to your list."),
           "info",
         );
         return;
       }
-      showToast("Error", msg, "error");
+      showToast(t("common.error"), msg, "error");
     } finally {
       setIsAddingCustom(false);
     }
@@ -231,8 +233,11 @@ export default function InterestManager({ navigation }) {
 
       if (!isPremium && normalizedInterests.length > MAX_FREE_INTERESTS) {
         showToast(
-          "Limit Reached",
-          `Free users can select up to ${MAX_FREE_INTERESTS} interests.`,
+          t("interests_manager.limit_reached", "Limit Reached"),
+          t("interests_manager.limit_reached_count", {
+            count: MAX_FREE_INTERESTS,
+            defaultValue: `Free users can select up to ${MAX_FREE_INTERESTS} interests.`,
+          }),
           "error",
         );
         return;
@@ -256,10 +261,10 @@ export default function InterestManager({ navigation }) {
         interestCategories: selectedCategoryNames,
       });
 
-      showToast("Success", "Interests updated!", "success");
+      showToast(t("common.success", "Success"), t("interests_manager.updated_toast", "Interests updated!"), "success");
       navigation.goBack();
     } catch (error) {
-      showToast("Error", error.message || "Could not save interests", "error");
+      showToast(t("common.error"), error.message || t("interests_manager.failed_save", "Could not save interests"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -287,7 +292,7 @@ export default function InterestManager({ navigation }) {
         >
           <Feather name="arrow-left" size={20} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Interests</Text>
+        <Text style={styles.headerTitle}>{t("interests_manager.title")}</Text>
         <TouchableOpacity
           onPress={handleSave}
           disabled={isSaving || isAddingCustom}
@@ -300,7 +305,7 @@ export default function InterestManager({ navigation }) {
               (isSaving || isAddingCustom) && { opacity: 0.5 },
             ]}
           >
-            {isSaving ? "Saving..." : "Done"}
+            {isSaving ? t("common.saving", "Saving...") : t("common.done", "Done")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -318,7 +323,7 @@ export default function InterestManager({ navigation }) {
               <Text
                 style={[styles.tabText, view === t && styles.tabTextActive]}
               >
-                {t === "mine" ? "My Interests" : "Browse All"}
+                {t === "mine" ? t("interests_manager.my_interests") : t("interests_manager.browse_all")}
               </Text>
             </TouchableOpacity>
           ))}
@@ -340,7 +345,7 @@ export default function InterestManager({ navigation }) {
               >
                 {usedCount}
               </Text>
-              /{isPremium ? "∞" : MAX_FREE_INTERESTS} selected
+              /{isPremium ? "∞" : MAX_FREE_INTERESTS} {t("interests_manager.selected", "selected")}
             </Text>
           </View>
           {!isPremium && (
@@ -355,7 +360,7 @@ export default function InterestManager({ navigation }) {
                 end={{ x: 1, y: 0 }}
                 style={styles.premiumChipGrad}
               >
-                <Text style={styles.premiumChipText}>👑 Go Unlimited</Text>
+                <Text style={styles.premiumChipText}>👑 {t("interests_manager.go_unlimited", "Go Unlimited")}</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}
@@ -386,7 +391,7 @@ export default function InterestManager({ navigation }) {
             <View style={styles.customRow}>
               <TextInput
                 style={styles.customInput}
-                placeholder="Add a custom interest tag..."
+                placeholder={t("interests_manager.add_custom_placeholder", "Add a custom interest tag...")}
                 placeholderTextColor={theme.colors.textMuted}
                 value={customTag || ""}
                 onChangeText={setCustomTag}
@@ -417,10 +422,10 @@ export default function InterestManager({ navigation }) {
                   <View style={styles.premiumContent}>
                     <View style={styles.premiumTextCol}>
                       <Text style={styles.premiumBannerTitle}>
-                        Unlock Custom Tags
+                        {t("interests_manager.unlock_custom_tags")}
                       </Text>
                       <Text style={styles.premiumBannerText}>
-                        Add unlimited interests & custom tags
+                        {t("interests_manager.add_unlimited_desc")}
                       </Text>
                     </View>
                     <View style={styles.premiumArrow}>
@@ -433,8 +438,8 @@ export default function InterestManager({ navigation }) {
           )}
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.myLabel}>Interests Focus</Text>
-            <Text style={styles.subLabel}>Tap to remove from your profile</Text>
+            <Text style={styles.myLabel}>{t("interests_manager.focus_title", "Interests Focus")}</Text>
+            <Text style={styles.subLabel}>{t("interests_manager.tap_to_remove", "Tap to remove from your profile")}</Text>
           </View>
 
           <View style={styles.chipsWrap}>
@@ -459,9 +464,9 @@ export default function InterestManager({ navigation }) {
                   color={theme.colors.border}
                   style={{ marginBottom: 12 }}
                 />
-                <Text style={styles.emptyNote}>No interests selected yet.</Text>
+                <Text style={styles.emptyNote}>{t("interests_manager.no_interests_selected", "No interests selected yet.")}</Text>
                 <TouchableOpacity onPress={() => setView("browse")}>
-                  <Text style={styles.emptyCta}>Browse to add some!</Text>
+                  <Text style={styles.emptyCta}>{t("interests_manager.browse_to_add", "Browse to add some!")}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -478,7 +483,7 @@ export default function InterestManager({ navigation }) {
                 color={theme.colors.primary}
                 style={{ marginRight: 8 }}
               />
-              <Text style={styles.browseMoreText}>Explore more categories</Text>
+              <Text style={styles.browseMoreText}>{t("interests_manager.explore_more", "Explore more categories")}</Text>
             </TouchableOpacity>
           )}
         </ScrollView>
@@ -495,7 +500,7 @@ export default function InterestManager({ navigation }) {
               />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search interests..."
+                placeholder={t("interests_manager.search_placeholder", "Search interests...")}
                 placeholderTextColor={theme.colors.textMuted}
                 value={search || ""}
                 onChangeText={setSearch}
@@ -543,7 +548,7 @@ export default function InterestManager({ navigation }) {
                           selectedInterests.includes(s),
                         ).length
                       }{" "}
-                      active
+                      {t("interests_manager.active", "active")}
                     </Text>
                   </View>
                   <Feather
@@ -611,11 +616,10 @@ export default function InterestManager({ navigation }) {
                   style={styles.limitBannerGrad}
                 >
                   <Text style={styles.limitBannerText}>
-                    Reach your full potential with Premium and select unlimited
-                    interests.
+                    {t("interests_manager.limit_banner_desc", "Reach your full potential with Premium and select unlimited interests.")}
                   </Text>
                   <View style={styles.limitBannerFooter}>
-                    <Text style={styles.limitBannerCta}>Upgrade Now</Text>
+                    <Text style={styles.limitBannerCta}>{t("premium.upgrade_now", "Upgrade Now")}</Text>
                     <Feather name="arrow-right" size={14} color="#FFF" />
                   </View>
                 </LinearGradient>

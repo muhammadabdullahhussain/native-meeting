@@ -242,30 +242,35 @@ export default function Discover({ navigation }) {
   const [isMoreLoading, setIsMoreLoading] = useState(false); // For UI only
 
   const LOOKING_FOR = [
-    "Anyone",
-    "Coffee Chat",
-    "Study Buddy",
-    "Collab Partner",
-    "Networking",
-    "Mentorship",
-    "Friendship",
-    "Travel Buddy",
-    "Workout Partner",
-    "Language Exchange",
+    t("discover.looking_for.anyone", "Anyone"),
+    t("discover.looking_for.coffee", "Coffee Chat"),
+    t("discover.looking_for.study", "Study Buddy"),
+    t("discover.looking_for.collab", "Collab Partner"),
+    t("discover.looking_for.networking", "Networking"),
+    t("discover.looking_for.mentorship", "Mentorship"),
+    t("discover.looking_for.friendship", "Friendship"),
+    t("discover.looking_for.travel", "Travel Buddy"),
+    t("discover.looking_for.workout", "Workout Partner"),
+    t("discover.looking_for.language", "Language Exchange"),
   ];
   const AVAILABILITY = [
-    "Weekdays",
-    "Weekends",
-    "Mornings",
-    "Evenings",
-    "Nights",
-    "Flexible",
+    t("discover.availability.weekdays", "Weekdays"),
+    t("discover.availability.weekends", "Weekends"),
+    t("discover.availability.mornings", "Mornings"),
+    t("discover.availability.evenings", "Evenings"),
+    t("discover.availability.nights", "Nights"),
+    t("discover.availability.flexible", "Flexible"),
   ];
   const LANGUAGES = useMemo(() => {
     const langCat = INTEREST_CATEGORIES.find((c) => c.id === "languages");
     return langCat ? langCat.subInterests : ["English"];
   }, []);
-  const GENDER_OPTIONS = ["Anyone", "Men", "Women", "Non-binary"];
+  const GENDER_OPTIONS = [
+    t("discover.looking_for.anyone", "Anyone"),
+    t("common.men", "Men"),
+    t("common.women", "Women"),
+    t("common.non_binary", "Non-binary"),
+  ];
   const QUICK_INTERESTS = useMemo(() => {
     return INTEREST_CATEGORIES.flatMap((c) => c.subInterests.slice(0, 1));
   }, []);
@@ -1549,7 +1554,7 @@ export default function Discover({ navigation }) {
                   min={filterAgeMin + 1}
                   max={80}
                   onValueChange={setFilterAgeMax}
-                  formatValue={(v) => t("discover.age_label", { count: v })}
+                  formatValue={(v) => t("discover.age_label", { count: v, defaultValue: `Up to ${v}` })}
                 />
               </View>
 
@@ -1599,7 +1604,7 @@ export default function Discover({ navigation }) {
                   >
                     <Feather name="heart" size={16} color="#059669" />
                   </View>
-                  <Text style={styles.filterLabel}>Looking For</Text>
+                  <Text style={styles.filterLabel}>{t("discover.looking_for_title")}</Text>
                 </View>
                 <View style={styles.chipRow}>
                   {LOOKING_FOR.map((opt) => (
@@ -1633,7 +1638,7 @@ export default function Discover({ navigation }) {
                   >
                     <Feather name="clock" size={16} color="#4F46E5" />
                   </View>
-                  <Text style={styles.filterLabel}>Availability</Text>
+                  <Text style={styles.filterLabel}>{t("discover.availability_title")}</Text>
                   {filterAvailability.length > 0 && (
                     <View style={styles.activeBadge}>
                       <Text style={styles.activeBadgeText}>
@@ -1682,7 +1687,7 @@ export default function Discover({ navigation }) {
                   >
                     <Feather name="globe" size={16} color="#CA8A04" />
                   </View>
-                  <Text style={styles.filterLabel}>Languages</Text>
+                  <Text style={styles.filterLabel}>{t("discover.languages_title")}</Text>
                   {filterLanguages.length > 0 && (
                     <View style={styles.activeBadge}>
                       <Text style={styles.activeBadgeText}>
@@ -1795,7 +1800,7 @@ export default function Discover({ navigation }) {
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={["#6366F1", "#7C3AED"]}
+                  colors={["#6366F1", "#4F46E5"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.applyGrad}
@@ -1806,7 +1811,7 @@ export default function Discover({ navigation }) {
                     color="#FFF"
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={styles.applyText}>{t("discover.apply_filters")}</Text>
+                  <Text style={styles.applyText}>{t("discover.apply_filters", "Apply Filters")}</Text>
                 </LinearGradient>
               </TouchableOpacity>
 

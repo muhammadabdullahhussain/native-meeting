@@ -3,6 +3,7 @@ import {
     View, Text, StyleSheet, TouchableOpacity,
     ScrollView, Alert, Platform, StatusBar
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,38 +13,41 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../api/authService';
 
-const PLANS = [
-    { id: 'monthly', label: 'Monthly', price: '$3.99', perMonth: '$3.99', period: 'monthly', savings: null, popular: false },
-    { id: 'biannual', label: '6 Months', price: '$20', perMonth: '$3.33', period: 'for 6 months', savings: 'Save 17%', popular: false },
-    { id: 'yearly', label: 'Yearly', price: '$32', perMonth: '$2.67', period: 'per year', savings: 'Save 33% 🔥', popular: true },
+const getPlans = (t) => [
+    { id: 'monthly', label: t('premium.monthly', 'Monthly'), price: '$3.99', perMonth: '$3.99', period: 'monthly', savings: null, popular: false },
+    { id: 'biannual', label: t('premium.six_months', '6 Months'), price: '$20', perMonth: '$3.33', period: 'for 6 months', savings: 'Save 17%', popular: false },
+    { id: 'yearly', label: t('premium.yearly', 'Yearly'), price: '$32', perMonth: '$2.67', period: 'per year', savings: 'Save 33% 🔥', popular: true },
 ];
 
-const FEATURE_COMPARISON = [
-    { feature: 'Message Requests', free: '✓', premium: '✓' },
-    { feature: 'Conversations', free: '30 limit', premium: 'Unlimited' },
-    { feature: 'Interests', free: '30 max', premium: 'Unlimited' },
-    { feature: 'Create Public Groups', free: '✗', premium: '✓' },
-    { feature: 'Group Discovery', free: 'Via referral (1)', premium: 'Unlimited' },
-    { feature: 'Premium Profile Badge', free: '✗', premium: '👑' },
-    { feature: 'Priority in Search', free: '✗', premium: '✓' },
-    { feature: 'See Who Viewed You', free: '✗', premium: '✓' },
-    { feature: 'Profile Boost', free: '✗', premium: 'Weekly' },
-    { feature: 'Advanced Filters', free: 'Basic', premium: 'All filters' },
+const getFeatureComparison = (t) => [
+    { feature: t('premium.features.unlimited_convo', 'Unlimited Conversations'), free: '30 limit', premium: 'Unlimited' },
+    { feature: t('interests_manager.title', 'Interests'), free: '30 max', premium: 'Unlimited' },
+    { feature: t('connections.group.create_public', 'Create Public Groups'), free: '✗', premium: '✓' },
+    { feature: t('connections.group.discovery', 'Group Discovery'), free: 'Via referral (1)', premium: 'Unlimited' },
+    { feature: t('premium.features.verified_badge', 'Verified Profile Badge'), free: '✗', premium: '👑' },
+    { feature: t('premium.features.priority_search', 'Priority in Search'), free: '✗', premium: '✓' },
+    { feature: t('premium.features.see_who_likes', 'See Who Likes You'), free: '✗', premium: '✓' },
+    { feature: t('premium.features.incognito', 'Incognito Mode'), free: '✗', premium: '✓' },
+    { feature: t('premium.features.advanced_filters', 'Advanced Discovery Filters'), free: 'Basic', premium: 'All filters' },
 ];
 
-const HIGHLIGHTS = [
-    { icon: 'message-circle', title: 'Unlimited Chats', desc: 'No 30-chat limit. Connect with as many people as you want.', color: '#6366F1', bg: '#EEF2FF' },
-    { icon: 'users', title: 'Create Public Groups', desc: 'Your groups appear in discovery for people with matching interests.', color: '#0EA5E9', bg: '#EFF9FF' },
-    { icon: 'zap', title: 'Priority Discovery', desc: 'Your profile appears first in search results near you.', color: '#F59E0B', bg: '#FFFBEB' },
-    { icon: 'eye', title: 'Profile Viewers', desc: 'See exactly who viewed your profile in the last 7 days.', color: '#A855F7', bg: '#FAF5FF' },
-    { icon: 'star', title: 'Premium Badge', desc: 'Stand out with an exclusive 👑 badge on your profile.', color: '#EC4899', bg: '#FDF2F8' },
-    { icon: 'sliders', title: 'Advanced Filters', desc: "Fine-tune your discovery by availability, vibe, and more.", color: '#22C55E', bg: '#F0FDF4' },
+const getHighlights = (t) => [
+    { icon: 'message-circle', title: t('premium.features.unlimited_convo'), desc: t('premium.highlights.unlimited_chats_desc', 'No 30-chat limit. Connect with as many people as you want.'), color: '#6366F1', bg: '#EEF2FF' },
+    { icon: 'users', title: t('premium.highlights.create_groups', 'Create Public Groups'), desc: t('premium.highlights.create_groups_desc', 'Your groups appear in discovery for people with matching interests.'), color: '#0EA5E9', bg: '#EFF9FF' },
+    { icon: 'zap', title: t('premium.highlights.priority_discovery', 'Priority Discovery'), desc: t('premium.highlights.priority_desc', 'Your profile appears first in search results near you.'), color: '#F59E0B', bg: '#FFFBEB' },
+    { icon: 'eye', title: t('premium.highlights.profile_viewers', 'Profile Viewers'), desc: t('premium.highlights.viewers_desc', 'See exactly who viewed your profile in the last 7 days.'), color: '#A855F7', bg: '#FAF5FF' },
+    { icon: 'star', title: t('premium.features.verified_badge'), desc: t('premium.highlights.badge_desc', 'Stand out with an exclusive 👑 badge on your profile.'), color: '#EC4899', bg: '#FDF2F8' },
+    { icon: 'sliders', title: t('premium.features.advanced_filters'), desc: t('premium.highlights.filters_desc', "Fine-tune your discovery by availability, vibe, and more."), color: '#22C55E', bg: '#F0FDF4' },
 ];
 
 export default function Premium({ navigation }) {
     const insets = useSafeAreaInsets();
     const { showToast } = useToast();
     const { user, updateUser } = useAuth();
+    const { t } = useTranslation();
+    const PLANS = getPlans(t);
+    const FEATURE_COMPARISON = getFeatureComparison(t);
+    const HIGHLIGHTS = getHighlights(t);
     const safeTop = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : insets.top;
     const [selectedPlan, setSelectedPlan] = useState('yearly');
     const [showComparison, setShowComparison] = useState(false);
@@ -71,11 +75,11 @@ export default function Premium({ navigation }) {
             // Update local user context
             updateUser({ isPremium: true });
 
-            showToast('Welcome to Premium! 👑', `You are now a Premium member. Enjoy unlimited access!`, 'success');
+            showToast(t('premium.welcome_toast', 'Welcome to Premium! 👑'), t('premium.welcome_msg', `You are now a Premium member. Enjoy unlimited access!`), 'success');
             navigation.goBack();
         } catch (error) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            showToast('Error', error.message || 'Payment failed', 'error');
+            showToast(t('common.error'), error.message || t('premium.failed_payment', 'Payment failed'), 'error');
         } finally {
             setIsProcessing(false);
         }
@@ -99,19 +103,19 @@ export default function Premium({ navigation }) {
                     <View style={s.crownWrap}>
                         <Text style={{ fontSize: 52 }}>👑</Text>
                     </View>
-                    <Text style={s.heroTitle}>{user?.isPremium ? 'Premium Active' : 'Go Premium'}</Text>
+                    <Text style={s.heroTitle}>{user?.isPremium ? t('premium.active') : t('premium.go_premium')}</Text>
                     <Text style={s.heroSub}>
                         {user?.isPremium
-                            ? "You're enjoying the elite BondUs experience with no limits. Thank you for being a part of our premium community!"
-                            : "Unlock the full BondUs experience — no limits, no restrictions, pure connection."}
+                            ? t('premium.active_sub', "You're enjoying the elite BondUs experience with no limits. Thank you for being a part of our premium community!")
+                            : t('premium.unlock_experience')}
                     </Text>
 
                     {/* Floating stats */}
                     <View style={s.statsRow}>
                         {[
-                            { num: '10K+', label: 'Premium users' },
-                            { num: '4.9★', label: 'App rating' },
-                            { num: '3x', label: 'More matches' },
+                            { num: '10K+', label: t('premium.premium_users') },
+                            { num: '4.9★', label: t('premium.app_rating') },
+                            { num: '3x', label: t('premium.more_matches') },
                         ].map((stat, i) => (
                             <View key={i} style={s.statItem}>
                                 <Text style={s.statNum}>{stat.num}</Text>
@@ -123,8 +127,8 @@ export default function Premium({ navigation }) {
 
                 {/* PLAN SELECTOR */}
                 <View style={s.section}>
-                    <Text style={s.sectionTitle}>Choose Your Plan</Text>
-                    <Text style={s.sectionSub}>Cancel anytime. No hidden fees.</Text>
+                    <Text style={s.sectionTitle}>{t('premium.choose_plan')}</Text>
+                    <Text style={s.sectionSub}>{t('premium.cancel_anytime')}</Text>
                     <View style={s.plansRow}>
                         {PLANS.map(plan => (
                             <TouchableOpacity
@@ -135,7 +139,7 @@ export default function Premium({ navigation }) {
                             >
                                 {plan.popular && (
                                     <View style={s.popularBadge}>
-                                        <Text style={s.popularText}>POPULAR</Text>
+                                        <Text style={s.popularText}>{t('premium.popular', 'POPULAR')}</Text>
                                     </View>
                                 )}
                                 {plan.savings && !plan.popular && (
@@ -158,15 +162,15 @@ export default function Premium({ navigation }) {
                     {/* Per month breakdown */}
                     <View style={s.breakdown}>
                         <Text style={s.breakdownText}>
-                            Billed as <Text style={s.breakdownBold}>{plan.price}</Text> • <Text style={s.breakdownBold}>{plan.perMonth}/mo</Text>
+                            {t('premium.billed_as', { amount: plan.price, defaultValue: `Billed as ${plan.price}` })} • <Text style={s.breakdownBold}>{plan.perMonth}/mo</Text>
                         </Text>
-                        {plan.savings && <Text style={s.breakdownSavings}>{plan.savings} vs monthly</Text>}
+                        {plan.savings && <Text style={s.breakdownSavings}>{plan.savings} {t('premium.vs_monthly')}</Text>}
                     </View>
                 </View>
 
                 {/* FEATURE HIGHLIGHTS */}
                 <View style={s.section}>
-                    <Text style={s.sectionTitle}>What You Get</Text>
+                    <Text style={s.sectionTitle}>{t('premium.what_you_get')}</Text>
                     <View style={s.highlightsGrid}>
                         {HIGHLIGHTS.map((h, i) => (
                             <View key={i} style={s.highlightCard}>
@@ -183,16 +187,16 @@ export default function Premium({ navigation }) {
                 {/* COMPARISON TABLE */}
                 <View style={s.section}>
                     <TouchableOpacity style={s.compareToggle} onPress={() => setShowComparison(!showComparison)} activeOpacity={0.8}>
-                        <Text style={s.compareToggleText}>Free vs Premium Comparison</Text>
+                        <Text style={s.compareToggleText}>{t('premium.compare_table')}</Text>
                         <Feather name={showComparison ? 'chevron-up' : 'chevron-down'} size={18} color="#6366F1" />
                     </TouchableOpacity>
 
                     {showComparison && (
                         <View style={s.compareTable}>
                             <View style={s.compareHeader}>
-                                <Text style={[s.compareCol, { flex: 2.5 }]}>Feature</Text>
-                                <Text style={s.compareCol}>Free</Text>
-                                <Text style={[s.compareCol, { color: '#7C3AED' }]}>Premium</Text>
+                                <Text style={[s.compareCol, { flex: 2.5 }]}>{t('premium.feature', 'Feature')}</Text>
+                                <Text style={s.compareCol}>{t('premium.free', 'Free')}</Text>
+                                <Text style={[s.compareCol, { color: '#7C3AED' }]}>{t('premium.premium', 'Premium')}</Text>
                             </View>
                             {FEATURE_COMPARISON.map((row, i) => (
                                 <View key={i} style={[s.compareRow, i % 2 === 0 && s.compareRowAlt]}>
@@ -216,17 +220,17 @@ export default function Premium({ navigation }) {
                         <LinearGradient colors={['#7C3AED', '#A855F7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.ctaGrad}>
                             <Text style={s.ctaText}>
                                 {isProcessing
-                                    ? 'Processing Payment...'
+                                    ? t('premium.processing')
                                     : user?.isPremium
-                                        ? 'Primary Plan Active'
-                                        : `Upgrade to Premium · ${plan.price}`}
+                                        ? t('premium.active')
+                                        : t('premium.upgrade_btn', { price: plan.price, defaultValue: `Upgrade to Premium · ${plan.price}` })}
                             </Text>
                             {!isProcessing && !user?.isPremium && <Feather name="arrow-right" size={18} color="#FFF" style={{ marginLeft: 8 }} />}
                         </LinearGradient>
                     </TouchableOpacity>
-                    <Text style={s.ctaNote}>🔒 Secure payment · Cancel anytime · 7-day refund policy</Text>
-                    <TouchableOpacity style={s.restoreBtn} onPress={() => showToast('Restore Purchase', 'No previous purchases found.', 'info')} activeOpacity={0.8}>
-                        <Text style={s.restoreBtnText}>Restore Purchase</Text>
+                    <Text style={s.ctaNote}>🔒 {t('premium.secure_note')}</Text>
+                    <TouchableOpacity style={s.restoreBtn} onPress={() => showToast(t('premium.restore_purchase'), t('premium.no_purchases', 'No previous purchases found.'), 'info')} activeOpacity={0.8}>
+                        <Text style={s.restoreBtnText}>{t('premium.restore_purchase')}</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>

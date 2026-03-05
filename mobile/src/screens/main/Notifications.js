@@ -26,6 +26,7 @@ import { authService } from "../../api/authService";
 import { useSocket } from "../../context/SocketContext";
 import { useAuth } from "../../context/AuthContext";
 import { useNotifications } from "../../context/NotificationContext";
+import { useTranslation } from "react-i18next";
 
 export default function Notifications({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -34,6 +35,7 @@ export default function Notifications({ navigation }) {
   const { on } = useSocket();
   const { refreshUnreadCount, decrementUnread, clearUnread } =
     useNotifications();
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -42,6 +44,12 @@ export default function Notifications({ navigation }) {
   const [hasMore, setHasMore] = useState(true);
 
   const tabs = ["All", "Requests", "Activity", "Messages"];
+  const tabLabels = {
+    All: t("notifications.all", "All"),
+    Requests: t("notifications.requests", "Requests"),
+    Activity: t("notifications.activity", "Activity"),
+    Messages: t("notifications.messages", "Messages"),
+  };
 
   const fetchNotifications = async (pageNum = 1, shouldRefresh = false) => {
     try {
@@ -113,20 +121,23 @@ export default function Notifications({ navigation }) {
 
   // Helper for relative time
   const getRelativeTime = (date) => {
-    if (!date) return "Just now";
-    const now = new Date();
-    const past = new Date(date);
-    const diffMs = now - past;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHr = Math.floor(diffMin / 60);
-    const diffDays = Math.floor(diffHr / 24);
-
-    if (diffSec < 60) return "Just now";
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHr < 24) return `${diffHr}h ago`;
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffSec < 60) return t("notifications.just_now", "Just now");
+    if (diffMin < 60)
+      return t("notifications.minutes_ago", {
+        count: diffMin,
+        defaultValue: `${diffMin}m ago`,
+      });
+    if (diffHr < 24)
+      return t("notifications.hours_ago", {
+        count: diffHr,
+        defaultValue: `${diffHr}h ago`,
+      });
+    if (diffDays === 1) return t("notifications.yesterday", "Yesterday");
+    if (diffDays < 7)
+      return t("notifications.days_ago", {
+        count: diffDays,
+        defaultValue: `${diffDays}d ago`,
+      });
     return past.toLocaleDateString();
   };
 
@@ -154,7 +165,7 @@ export default function Notifications({ navigation }) {
       clearUnread();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err) {
-      showToast("Error", "Failed to mark all as read", "error");
+      showToast(t("common.error"), t("notifications.failed_mark_read", "Failed to mark all as read"), "error");
     }
   };
 
@@ -166,15 +177,15 @@ export default function Notifications({ navigation }) {
       if (item && !item.isRead) decrementUnread();
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (err) {
-      showToast("Error", "Failed to delete notification", "error");
+      showToast(t("common.error"), t("notifications.failed_delete", "Failed to delete notification"), "error");
     }
   };
 
   const clearAll = () => {
-    Alert.alert("Clear all notifications?", "This action cannot be undone.", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("notifications.clear_all_confirm_title", "Clear all notifications?"), t("notifications.clear_all_confirm_msg", "This action cannot be undone."), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Clear All",
+        text: t("notifications.clear_all"),
         style: "destructive",
         onPress: async () => {
           try {
@@ -182,7 +193,7 @@ export default function Notifications({ navigation }) {
             setNotifications([]);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch (err) {
-            showToast("Error", "Failed to clear notifications", "error");
+            showToast(t("common.error"), t("notifications.failed_clear", "Failed to clear notifications"), "error");
           }
         },
       },
@@ -231,13 +242,13 @@ export default function Notifications({ navigation }) {
       await authService.resolveConnectionRequest(originalId || id, "accepted");
       await markRead(id);
       showToast(
-        "Accepted! ✅",
-        `You are now connected with ${name}.`,
+        t("connections.request.accepted_toast"),
+        t("connections.request.connected_with", { name: name }),
         "success",
       );
       fetchNotifications();
     } catch (err) {
-      showToast("Error", "Failed to accept request", "error");
+      showToast(t("common.error"), t("connections.request.failed_accept"), "error");
     }
   };
 
@@ -246,7 +257,7 @@ export default function Notifications({ navigation }) {
       await authService.resolveConnectionRequest(originalId || id, "rejected");
       setNotifications((prev) => prev.filter((n) => (n._id || n.id) !== id));
     } catch (err) {
-      showToast("Error", "Failed to decline request", "error");
+      showToast(t("common.error"), t("connections.request.failed_decline"), "error");
     }
   };
 
@@ -255,15 +266,15 @@ export default function Notifications({ navigation }) {
       if (groupId) {
         await authService.joinGroup(groupId);
         showToast(
-          "Joined! 👋",
-          `You have successfully joined "${name}".`,
+          t("connections.group.joined_toast", "Joined! 👋"),
+          t("connections.group.joined_msg", { name: name }),
           "success",
         );
       }
       await markRead(id);
       fetchNotifications();
     } catch (err) {
-      showToast("Error", err.message || "Failed to join group", "error");
+      showToast(t("common.error"), err.message || t("connections.group.failed_join"), "error");
     }
   };
 
@@ -303,7 +314,7 @@ export default function Notifications({ navigation }) {
       >
         <Animated.View style={styles.deleteActionContent}>
           <Feather name="trash-2" size={20} color="#FFF" />
-          <Text style={styles.deleteActionText}>Delete</Text>
+          <Text style={styles.deleteActionText}>{t("notifications.delete", "Delete")}</Text>
         </Animated.View>
       </TouchableOpacity>
     );
@@ -315,18 +326,18 @@ export default function Notifications({ navigation }) {
     const isGroupRequest = item.type === "group_request" && !item.isRead;
 
     const typeLabels = {
-      connect_request: "Connection Request",
-      group_request: "Group Invitation",
-      interest_match: "New Match! 🔥",
-      nearby: "Someone Nearby 📍",
-      message: "New Message 💬",
-      group_accepted: "Request Approved ✅",
-      connected: "New Connection 👋",
-      referral_joined: "Referral Reward 🎁",
+      connect_request: t("notifications.connection_request"),
+      group_request: t("notifications.group_invitation"),
+      interest_match: t("notifications.interest_match", "New Match! 🔥"),
+      nearby: t("notifications.nearby", "Someone Nearby 📍"),
+      message: t("notifications.message", "New Message 💬"),
+      group_accepted: t("notifications.group_accepted", "Request Approved ✅"),
+      connected: t("notifications.connected", "New Connection 👋"),
+      referral_joined: t("notifications.referral_joined", "Referral Reward 🎁"),
     };
 
     const id = item._id || item.id;
-    const title = typeLabels[item.type] || "New Update";
+    const title = typeLabels[item.type] || t("notifications.new_update", "New Update");
     const name = item.sender?.name || item.name || "User";
     const avatar = item.sender?.avatar || item.avatar;
     const message = item.message;
@@ -378,7 +389,7 @@ export default function Notifications({ navigation }) {
                   onPress={() => declineRequest(id, item.data?.connectionId)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.declineActionBtnText}>Decline</Text>
+                  <Text style={styles.declineActionBtnText}>{t("notifications.decline")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.acceptActionBtn}
@@ -387,7 +398,7 @@ export default function Notifications({ navigation }) {
                   }
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.acceptActionBtnText}>Accept</Text>
+                  <Text style={styles.acceptActionBtnText}>{t("notifications.accept")}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -399,7 +410,7 @@ export default function Notifications({ navigation }) {
                   onPress={() => declineGroupRequest(id)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.declineActionBtnText}>Decline</Text>
+                  <Text style={styles.declineActionBtnText}>{t("notifications.decline")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.acceptActionBtn}
@@ -408,7 +419,7 @@ export default function Notifications({ navigation }) {
                   }
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.acceptActionBtnText}>Accept</Text>
+                  <Text style={styles.acceptActionBtnText}>{t("notifications.accept")}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -431,7 +442,7 @@ export default function Notifications({ navigation }) {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Text style={styles.headerTitle}>Notifications</Text>
+          <Text style={styles.headerTitle}>{t("notifications.title")}</Text>
         </LinearGradient>
         <NotificationSkeleton />
       </View>
@@ -451,11 +462,14 @@ export default function Notifications({ navigation }) {
       >
         <View style={styles.headerTop}>
           <View style={{ flex: 1, marginRight: 8 }}>
-            <Text style={styles.headerTitle}>Notifications</Text>
+            <Text style={styles.headerTitle}>{t("notifications.title")}</Text>
             <Text style={styles.headerSubtitle}>
               {unreadCount > 0
-                ? `${unreadCount} new updates`
-                : "All caught up!"}
+                ? t("notifications.new_updates_count", {
+                    count: unreadCount,
+                    defaultValue: `${unreadCount} new updates`,
+                  })
+                : t("notifications.empty_title")}
             </Text>
           </View>
 
@@ -466,7 +480,7 @@ export default function Notifications({ navigation }) {
                 onPress={clearAll}
               >
                 <Feather name="trash-2" size={14} color="#FECACA" />
-                <Text style={styles.clearAllText}>Clear All</Text>
+                <Text style={styles.clearAllText}>{t("notifications.clear_all")}</Text>
               </TouchableOpacity>
             )}
 
@@ -476,7 +490,7 @@ export default function Notifications({ navigation }) {
                 onPress={markAllRead}
               >
                 <Feather name="check-circle" size={14} color="#FFF" />
-                <Text style={styles.markAllText}>Mark all read</Text>
+                <Text style={styles.markAllText}>{t("notifications.mark_all_read")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -511,7 +525,7 @@ export default function Notifications({ navigation }) {
                     selectedTab === tab && styles.activeTabText,
                   ]}
                 >
-                  {tab}
+                  {tabLabels[tab]}
                 </Text>
                 {count > 0 && (
                   <View style={styles.tabBadge}>
@@ -551,7 +565,7 @@ export default function Notifications({ navigation }) {
                   fontFamily: theme.typography.fontFamily.medium,
                 }}
               >
-                Loading more...
+                {t("common.loading_more", "Loading more...")}
               </Text>
             </View>
           ) : null
@@ -562,9 +576,9 @@ export default function Notifications({ navigation }) {
               <View style={styles.emptyIcon}>
                 <Feather name="bell-off" size={40} color="#CBD5E1" />
               </View>
-              <Text style={styles.emptyTitle}>All caught up!</Text>
+              <Text style={styles.emptyTitle}>{t("notifications.empty_title")}</Text>
               <Text style={styles.emptySubtitle}>
-                No notifications in this category yet.
+                {t("notifications.empty_subtitle")}
               </Text>
             </View>
           )

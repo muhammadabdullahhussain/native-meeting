@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../theme/theme';
+import { useTranslation } from 'react-i18next';
 
 import Discover from '../screens/main/Discover';
 import Connections from '../screens/main/Connections';
@@ -16,6 +17,7 @@ const Tab = createBottomTabNavigator();
 export default function MainTabs() {
     const insets = useSafeAreaInsets();
     const { unreadCount } = useNotifications();
+    const { t } = useTranslation();
 
     return (
         <Tab.Navigator
@@ -53,12 +55,13 @@ export default function MainTabs() {
                 ],
             })}
         >
-            <Tab.Screen name="Discover" component={Discover} options={{ title: 'Explore' }} />
-            <Tab.Screen name="Connections" component={Connections} options={{ title: 'Messages' }} />
+            <Tab.Screen name="Discover" component={Discover} options={{ title: t('tabs.explore', 'Explore') }} />
+            <Tab.Screen name="Connections" component={Connections} options={{ title: t('tabs.messages', 'Messages') }} />
             <Tab.Screen
                 name="Notifications"
                 component={Notifications}
                 options={{
+                    title: t('tabs.notifications', 'Notifications'),
                     tabBarBadge: unreadCount > 0 ? unreadCount : null,
                     tabBarBadgeStyle: {
                         backgroundColor: '#EF4444',
@@ -68,7 +71,7 @@ export default function MainTabs() {
                     }
                 }}
             />
-            <Tab.Screen name="Profile" component={Profile} />
+            <Tab.Screen name="Profile" component={Profile} options={{ title: t('tabs.profile', 'Profile') }} />
         </Tab.Navigator>
     );
 }
