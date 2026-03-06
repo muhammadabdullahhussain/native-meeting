@@ -96,7 +96,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
                                     <CheckCircle className="w-6 h-6 text-blue-400" />
                                 )}
                             </div>
-                            <p className="text-indigo-400 font-medium text-lg mt-1">@{profile.username}</p>
+                            <p className="text-indigo-400 font-medium text-lg mt-1">@{profile.username || "user"}</p>
 
                             {/* Status Row */}
                             <div className="flex flex-wrap items-center gap-6 mt-5 text-slate-300">
