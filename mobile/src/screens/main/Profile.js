@@ -746,14 +746,27 @@ export default function Profile({ navigation, route }) {
                   }}
                 >
                   <LinearGradient
-                    colors={["#EEF2FF", "#EDE9FE"]}
+                    colors={["#6366F1", "#A855F7"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={s.qrInner}
                   >
-                    <Feather name="link-2" size={32} color="#6366F1" />
-                    <Text style={s.qrUrl}>bondus.vercel.app/{user.username || user.id}</Text>
-                    <Text style={s.tapToShare}>{t("profile.tap_to_share")}</Text>
-                  </LinearGradient>
+                    <View style={s.shareIconBadge}>
+                      <Feather name="link" size={24} color="#6366F1" />
+                    </View>
 
+                    <Text style={[s.qrUrl, { color: '#FFF', marginTop: 16 }]}>
+                      {user.username ? `@${user.username}` : user.name}
+                    </Text>
+
+                    <View style={s.shareLinkLabel}>
+                      <Text style={s.shareLinkSubText}>bondus.vercel.app/{user.username || 'profile'}</Text>
+                    </View>
+
+                    <Text style={[s.tapToShare, { color: 'rgba(255,255,255,0.8)', marginTop: 12 }]}>
+                      {t("profile.tap_to_share")}
+                    </Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1928,22 +1941,45 @@ const s = StyleSheet.create({
   },
 
   // QR / SHARE
-  qrBox: { borderRadius: 20, overflow: "hidden", marginBottom: 16 },
-  qrInner: { alignItems: "center", paddingVertical: 28 },
+  qrBox: { borderRadius: 24, overflow: "hidden", marginBottom: 16, elevation: 4, shadowColor: '#6366F1', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 12 },
+  qrInner: { alignItems: "center", paddingVertical: 32 },
+  shareIconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  shareLinkLabel: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  shareLinkSubText: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 13,
+    fontFamily: theme.typography.fontFamily.medium,
+  },
   qrUrl: {
-    fontSize: 16,
+    fontSize: 20,
     fontFamily: theme.typography.fontFamily.bold,
     color: "#4F46E5",
-    marginTop: 12,
     textAlign: "center",
     paddingHorizontal: 20,
   },
   tapToShare: {
     fontSize: 12,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily.bold,
     color: "#6366F1",
-    marginTop: 4,
-    opacity: 0.8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
 
   // MODAL
