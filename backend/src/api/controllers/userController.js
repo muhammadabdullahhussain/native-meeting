@@ -81,7 +81,30 @@ exports.getUser = catchAsync(async (req, res, next) => {
 });
 
 /**
+ * @desc    Get public profile by username for web sharing
+ * @route   GET /api/users/profile/:username
+ * @access  Public
+ */
+exports.getPublicProfileByUsername = catchAsync(async (req, res, next) => {
+  const { username } = req.params;
+
+  const user = await require('../../models/User').findOne({ username: username.toLowerCase() })
+    .select('name username avatar banner bio city jobTitle company interests isPremium lookingFor isVerified onlineStatus');
+
+  if (!user) {
+    return next(new AppError("User not found", 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    status: "success",
+    data: user,
+  });
+});
+
+/**
  * @desc    Upgrade user to premium (Mock)
+
  * @route   POST /api/users/upgrade
  */
 exports.upgradeToPremium = catchAsync(async (req, res, next) => {

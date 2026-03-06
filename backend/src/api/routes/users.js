@@ -9,6 +9,8 @@ const { protect } = require('../middleware/authMiddleware');
  */
 router.get('/discover', protect, userController.getDiscover);
 router.post('/upgrade', protect, userController.upgradeToPremium);
+router.get('/profile/:username', userController.getPublicProfileByUsername);
 router.get('/:id', protect, userController.getUser);
 
 module.exports = router;
+
