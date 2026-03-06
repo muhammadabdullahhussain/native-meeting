@@ -376,20 +376,20 @@ export default function Settings({ navigation }) {
                         iconColor="#0EA5E9"
                         label={t('settings.app_language')}
                         sub={
-                          [
-                            { code: 'en', label: 'English' },
-                            { code: 'ur', label: 'Urdu (اردو)' },
-                            { code: 'hi', label: 'Hindi (हिन्दी)' },
-                            { code: 'es', label: 'Spanish (Español)' },
-                            { code: 'fr', label: 'French (Français)' },
-                            { code: 'ar', label: 'Arabic (العربية)' },
-                            { code: 'zh', label: 'Chinese (中文)' },
-                            { code: 'ru', label: 'Russian (Русский)' },
-                            { code: 'pt', label: 'Portuguese (Português)' },
-                            { code: 'bn', label: 'Bengali (বাংলা)' },
-                            { code: 'de', label: 'German (Deutsch)' },
-                            { code: 'id', label: 'Indonesian (Bahasa)' }
-                          ].find(l => l.code === i18n.language)?.label || 'English'
+                            [
+                                { code: 'en', label: 'English' },
+                                { code: 'ur', label: 'Urdu (اردو)' },
+                                { code: 'hi', label: 'Hindi (हिन्दी)' },
+                                { code: 'es', label: 'Spanish (Español)' },
+                                { code: 'fr', label: 'French (Français)' },
+                                { code: 'ar', label: 'Arabic (العربية)' },
+                                { code: 'zh', label: 'Chinese (中文)' },
+                                { code: 'ru', label: 'Russian (Русский)' },
+                                { code: 'pt', label: 'Portuguese (Português)' },
+                                { code: 'bn', label: 'Bengali (বাংলা)' },
+                                { code: 'de', label: 'German (Deutsch)' },
+                                { code: 'id', label: 'Indonesian (Bahasa)' }
+                            ].find(l => l.code === i18n.language)?.label || 'English'
                         }
                         onPress={() => setShowLanguageModal(true)}
                     />
@@ -542,46 +542,55 @@ export default function Settings({ navigation }) {
             {/* Language Selection Modal */}
             <Modal visible={showLanguageModal} animationType="fade" transparent>
                 <View style={s.modalOverlay}>
-                    <TouchableOpacity 
-                        style={{ flex: 1 }} 
-                        activeOpacity={1} 
-                        onPress={() => setShowLanguageModal(false)} 
+                    <TouchableOpacity
+                        style={{ flex: 1 }}
+                        activeOpacity={1}
+                        onPress={() => setShowLanguageModal(false)}
                     />
                     <View style={s.modalSheet}>
                         <View style={s.modalHeader}>
                             <Text style={s.modalTitle}>{t('language.select_title')}</Text>
-                            <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                            <TouchableOpacity style={s.modalCloseBtn} onPress={() => setShowLanguageModal(false)} activeOpacity={0.7}>
                                 <Feather name="x" size={20} color="#64748B" />
                             </TouchableOpacity>
                         </View>
-                        
-                        {[
-                            { code: 'en', label: 'English', flag: '🇺🇸' },
-                            { code: 'ur', label: 'Urdu (اردو)', flag: '🇵🇰' },
-                            { code: 'hi', label: 'Hindi (हिन्दी)', flag: '🇮🇳' },
-                            { code: 'es', label: 'Spanish (Español)', flag: '🇪🇸' },
-                            { code: 'fr', label: 'French (Français)', flag: '🇫🇷' },
-                            { code: 'ar', label: 'Arabic (العربية)', flag: '🇸🇦' },
-                            { code: 'zh', label: 'Chinese (中文)', flag: '🇨🇳' },
-                            { code: 'ru', label: 'Russian (Русский)', flag: '🇷🇺' },
-                            { code: 'pt', label: 'Portuguese (Português)', flag: '🇧🇷' },
-                            { code: 'bn', label: 'Bengali (বাংলা)', flag: '🇧🇩' },
-                            { code: 'de', label: 'German (Deutsch)', flag: '🇩🇪' },
-                            { code: 'id', label: 'Indonesian (Bahasa)', flag: '🇮🇩' }
-                        ].map((lang) => (
-                            <TouchableOpacity 
-                                key={lang.code}
-                                style={[s.langOption, i18n.language === lang.code && s.langOptionActive]}
-                                onPress={() => changeLanguage(lang.code)}
-                            >
-                                <Text style={s.langFlag}>{lang.flag}</Text>
-                                <Text style={s.langText}>{lang.label}</Text>
-                                {i18n.language === lang.code && (
-                                    <Feather name="check" size={18} color="#6366F1" />
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                        <View style={{ height: 20 }} />
+
+                        <ScrollView showsVerticalScrollIndicator={true} style={s.languageScroll} contentContainerStyle={s.languageScrollContent}>
+                            {[
+                                { code: 'en', label: 'English', flag: '🇺🇸' },
+                                { code: 'ur', label: 'Urdu (اردو)', flag: '🇵🇰' },
+                                { code: 'hi', label: 'Hindi (हिन्दी)', flag: '🇮🇳' },
+                                { code: 'es', label: 'Spanish (Español)', flag: '🇪🇸' },
+                                { code: 'fr', label: 'French (Français)', flag: '🇫🇷' },
+                                { code: 'ar', label: 'Arabic (العربية)', flag: '🇸🇦' },
+                                { code: 'zh', label: 'Chinese (中文)', flag: '🇨🇳' },
+                                { code: 'ru', label: 'Russian (Русский)', flag: '🇷🇺' },
+                                { code: 'pt', label: 'Portuguese (Português)', flag: '🇧🇷' },
+                                { code: 'bn', label: 'Bengali (বাংলা)', flag: '🇧🇩' },
+                                { code: 'de', label: 'German (Deutsch)', flag: '🇩🇪' },
+                                { code: 'id', label: 'Indonesian (Bahasa)', flag: '🇮🇩' }
+                            ].map((lang) => {
+                                const isActive = i18n.language === lang.code;
+                                return (
+                                    <TouchableOpacity
+                                        key={lang.code}
+                                        style={[s.langOption, isActive && s.langOptionActive]}
+                                        onPress={() => changeLanguage(lang.code)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={[s.langFlagBox, isActive && s.langFlagBoxActive]}>
+                                            <Text style={s.langFlag}>{lang.flag}</Text>
+                                        </View>
+                                        <Text style={[s.langText, isActive && s.langTextActive]}>{lang.label}</Text>
+                                        {isActive && (
+                                            <View style={s.langCheckBadge}>
+                                                <Feather name="check" size={14} color="#FFF" />
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
@@ -696,22 +705,76 @@ const s = StyleSheet.create({
     input: { flex: 1, paddingVertical: 13, fontSize: 15, fontFamily: theme.typography.fontFamily.medium, color: '#0F172A' },
     primaryBtn: { backgroundColor: '#6366F1', borderRadius: 16, paddingVertical: 15, alignItems: 'center', marginTop: 8 },
     primaryBtnText: { fontSize: 16, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
-    
+
     // Language Modal Specifics
+    modalCloseBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    languageScroll: {
+        maxHeight: 450,
+        marginTop: 10
+    },
+    languageScrollContent: {
+        paddingBottom: 20
+    },
     langOption: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
-        borderRadius: 14,
-        marginBottom: 8,
-        gap: 12,
-        backgroundColor: '#F8FAFC',
+        borderRadius: 16,
+        marginBottom: 12,
+        backgroundColor: '#FFF',
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        // Premium subtle shadow
+        elevation: 2,
+        shadowColor: "#0F172A",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
     },
     langOptionActive: {
         backgroundColor: '#EEF2FF',
-        borderWidth: 1,
         borderColor: '#818CF8',
+        shadowColor: "#6366F1",
+        shadowOpacity: 0.1,
     },
-    langFlag: { fontSize: 20 },
-    langText: { flex: 1, fontSize: 16, fontFamily: theme.typography.fontFamily.medium, color: '#0F172A' },
+    langFlagBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#F8FAFC',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    langFlagBoxActive: {
+        backgroundColor: '#FFF',
+    },
+    langFlag: {
+        fontSize: 22
+    },
+    langText: {
+        flex: 1,
+        fontSize: 16,
+        fontFamily: theme.typography.fontFamily.medium,
+        color: '#475569'
+    },
+    langTextActive: {
+        color: '#6366F1',
+        fontFamily: theme.typography.fontFamily.bold,
+    },
+    langCheckBadge: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#6366F1',
+        justifyContent: 'center',
+        alignItems: 'center',
+    }
 });

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, Alert, Platform, StatusBar
+    ScrollView, Alert, Platform, StatusBar, Dimensions
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,14 +13,18 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../api/authService';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 const getPlans = (t) => [
     { id: 'monthly', label: t('premium.monthly', 'Monthly'), price: '$3.99', perMonth: '$3.99', period: 'monthly', savings: null, popular: false },
     { id: 'biannual', label: t('premium.six_months', '6 Months'), price: '$20', perMonth: '$3.33', period: 'for 6 months', savings: 'Save 17%', popular: false },
     { id: 'yearly', label: t('premium.yearly', 'Yearly'), price: '$32', perMonth: '$2.67', period: 'per year', savings: 'Save 33% 🔥', popular: true },
+    { id: 'lifetime', label: t('premium.lifetime', 'Lifetime'), price: '$99', perMonth: 'One-time', period: 'forever', savings: 'Best Value 💎', popular: false },
 ];
 
 const getFeatureComparison = (t) => [
     { feature: t('premium.features.unlimited_convo', 'Unlimited Conversations'), free: '30 limit', premium: 'Unlimited' },
+    { feature: t('premium.features.custom_interests', 'Custom Interest Tags'), free: '✗', premium: '✓' },
     { feature: t('interests_manager.title', 'Interests'), free: '30 max', premium: 'Unlimited' },
     { feature: t('connections.group.create_public', 'Create Public Groups'), free: '✗', premium: '✓' },
     { feature: t('connections.group.discovery', 'Group Discovery'), free: 'Via referral (1)', premium: 'Unlimited' },
@@ -32,12 +36,12 @@ const getFeatureComparison = (t) => [
 ];
 
 const getHighlights = (t) => [
+    { icon: 'tag', title: t('premium.features.custom_interests'), desc: t('interests_manager.add_unlimited_desc', "Add unlimited interests & custom tags that others can discover."), color: '#8B5CF6', bg: '#F5F3FF' },
     { icon: 'message-circle', title: t('premium.features.unlimited_convo'), desc: t('premium.highlights.unlimited_chats_desc', 'No 30-chat limit. Connect with as many people as you want.'), color: '#6366F1', bg: '#EEF2FF' },
     { icon: 'users', title: t('premium.highlights.create_groups', 'Create Public Groups'), desc: t('premium.highlights.create_groups_desc', 'Your groups appear in discovery for people with matching interests.'), color: '#0EA5E9', bg: '#EFF9FF' },
     { icon: 'zap', title: t('premium.highlights.priority_discovery', 'Priority Discovery'), desc: t('premium.highlights.priority_desc', 'Your profile appears first in search results near you.'), color: '#F59E0B', bg: '#FFFBEB' },
     { icon: 'eye', title: t('premium.highlights.profile_viewers', 'Profile Viewers'), desc: t('premium.highlights.viewers_desc', 'See exactly who viewed your profile in the last 7 days.'), color: '#A855F7', bg: '#FAF5FF' },
     { icon: 'star', title: t('premium.features.verified_badge'), desc: t('premium.highlights.badge_desc', 'Stand out with an exclusive 👑 badge on your profile.'), color: '#EC4899', bg: '#FDF2F8' },
-    { icon: 'sliders', title: t('premium.features.advanced_filters'), desc: t('premium.highlights.filters_desc', "Fine-tune your discovery by availability, vibe, and more."), color: '#22C55E', bg: '#F0FDF4' },
 ];
 
 export default function Premium({ navigation }) {
@@ -70,7 +74,7 @@ export default function Premium({ navigation }) {
             await new Promise(resolve => setTimeout(resolve, 1500));
 
             // Call backend API
-            await authService.upgradeToPremium();
+            await authService.upgradeToPremium(selectedPlan);
 
             // Update local user context
             updateUser({ isPremium: true });
@@ -162,9 +166,12 @@ export default function Premium({ navigation }) {
                     {/* Per month breakdown */}
                     <View style={s.breakdown}>
                         <Text style={s.breakdownText}>
-                            {t('premium.billed_as', { amount: plan.price, defaultValue: `Billed as ${plan.price}` })} • <Text style={s.breakdownBold}>{plan.perMonth}/mo</Text>
+                            {t('premium.billed_as', { amount: plan.price, defaultValue: `Billed as ${plan.price}` })}
+                            {plan.id !== 'lifetime' && (
+                                <> • <Text style={s.breakdownBold}>{plan.perMonth}/mo</Text></>
+                            )}
                         </Text>
-                        {plan.savings && <Text style={s.breakdownSavings}>{plan.savings} {t('premium.vs_monthly')}</Text>}
+                        {plan.savings && <Text style={s.breakdownSavings}>{plan.savings} {plan.id !== 'lifetime' ? t('premium.vs_monthly') : ''}</Text>}
                     </View>
                 </View>
 
@@ -253,52 +260,83 @@ const s = StyleSheet.create({
     statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontFamily: theme.typography.fontFamily.medium },
 
     // SECTIONS
-    section: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 4 },
-    sectionTitle: { fontSize: 20, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 4 },
-    sectionSub: { fontSize: 13, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, marginBottom: 16 },
+    section: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 4 },
+    sectionTitle: { fontSize: 22, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 4 },
+    sectionSub: { fontSize: 14, color: '#64748B', fontFamily: theme.typography.fontFamily.medium, marginBottom: 20 },
 
-    // PLANS
-    plansRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
-    planCard: { flex: 1, borderRadius: 18, borderWidth: 2, borderColor: '#E2E8F0', backgroundColor: '#FFF', padding: 14, alignItems: 'center', position: 'relative', paddingTop: 20 },
-    planCardActive: { borderColor: '#7C3AED', backgroundColor: '#FAF5FF', shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 6 },
-    popularBadge: { position: 'absolute', top: -11, paddingHorizontal: 10, paddingVertical: 3, backgroundColor: '#7C3AED', borderRadius: 20, borderWidth: 1, borderColor: '#A855F7' },
-    popularText: { fontSize: 9, fontFamily: theme.typography.fontFamily.bold, color: '#FFF', textTransform: 'uppercase', letterSpacing: 0.5 },
-    planLabel: { fontSize: 12, fontFamily: theme.typography.fontFamily.bold, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+    // PLANS GRID (2x2)
+    plansRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
+    planCard: {
+        width: (screenWidth - 32 - 12) / 2, // 2 columns minus horizontal padding and gap
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: '#E2E8F0',
+        backgroundColor: '#FFF',
+        paddingVertical: 20,
+        paddingHorizontal: 12,
+        alignItems: 'center',
+        position: 'relative',
+        marginBottom: 4
+    },
+    planCardActive: {
+        borderColor: '#7C3AED',
+        backgroundColor: '#FAF5FF',
+        shadowColor: '#7C3AED',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 6
+    },
+    popularBadge: {
+        position: 'absolute',
+        top: -10,
+        alignSelf: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        backgroundColor: '#7C3AED',
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderColor: '#A855F7',
+        zIndex: 5
+    },
+    popularText: { fontSize: 10, fontFamily: theme.typography.fontFamily.bold, color: '#FFF', textTransform: 'uppercase', letterSpacing: 0.5 },
+    planLabel: { fontSize: 13, fontFamily: theme.typography.fontFamily.bold, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
     planLabelActive: { color: '#7C3AED' },
-    planPrice: { fontSize: 22, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 2 },
+    planPrice: { fontSize: 26, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 2 },
     planPriceActive: { color: '#7C3AED' },
-    planPeriod: { fontSize: 11, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
+    planPeriod: { fontSize: 12, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium },
     planPeriodActive: { color: '#A855F7' },
-    planCheck: { marginTop: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: '#7C3AED', justifyContent: 'center', alignItems: 'center' },
-    breakdown: { backgroundColor: '#F5F3FF', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: '#DDD6FE', marginBottom: 4 },
-    breakdownText: { fontSize: 13, color: '#6D28D9', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center' },
-    breakdownBold: { fontFamily: theme.typography.fontFamily.bold },
-    breakdownSavings: { fontSize: 12, color: '#059669', fontFamily: theme.typography.fontFamily.bold, textAlign: 'center', marginTop: 2 },
+    planCheck: { marginTop: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: '#7C3AED', justifyContent: 'center', alignItems: 'center' },
+
+    breakdown: { backgroundColor: '#F1F5F9', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1, borderColor: '#E2E8F0', marginTop: 8 },
+    breakdownText: { fontSize: 14, color: '#1E293B', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center' },
+    breakdownBold: { fontFamily: theme.typography.fontFamily.bold, color: '#7C3AED' },
+    breakdownSavings: { fontSize: 13, color: '#059669', fontFamily: theme.typography.fontFamily.bold, textAlign: 'center', marginTop: 4 },
 
     // HIGHLIGHTS
-    highlightsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-    highlightCard: { width: '47.5%', backgroundColor: '#FFF', borderRadius: 18, padding: 14, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
-    highlightIcon: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-    highlightTitle: { fontSize: 14, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 4 },
-    highlightDesc: { fontSize: 12, color: '#64748B', fontFamily: theme.typography.fontFamily.medium, lineHeight: 18 },
+    highlightsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 10 },
+    highlightCard: { width: (screenWidth - 32 - 12) / 2, backgroundColor: '#FFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
+    highlightIcon: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+    highlightTitle: { fontSize: 15, fontFamily: theme.typography.fontFamily.bold, color: '#0F172A', marginBottom: 6 },
+    highlightDesc: { fontSize: 13, color: '#64748B', fontFamily: theme.typography.fontFamily.medium, lineHeight: 19 },
 
     // COMPARISON
-    compareToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#EEF2FF', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#C7D2FE' },
-    compareToggleText: { fontSize: 14, fontFamily: theme.typography.fontFamily.bold, color: '#4338CA' },
-    compareTable: { marginTop: 12, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0' },
-    compareHeader: { flexDirection: 'row', backgroundColor: '#0F172A', paddingHorizontal: 12, paddingVertical: 10 },
+    compareToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', marginTop: 8 },
+    compareToggleText: { fontSize: 14, fontFamily: theme.typography.fontFamily.bold, color: '#475569' },
+    compareTable: { marginTop: 12, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0', backgroundColor: '#FFF' },
+    compareHeader: { flexDirection: 'row', backgroundColor: '#0F172A', paddingHorizontal: 16, paddingVertical: 12 },
     compareCol: { flex: 1, fontSize: 12, fontFamily: theme.typography.fontFamily.bold, color: '#FFF', textAlign: 'center' },
-    compareRow: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 11, backgroundColor: '#FFF' },
+    compareRow: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
     compareRowAlt: { backgroundColor: '#F8FAFC' },
-    compareCell: { flex: 1, fontSize: 12, color: '#64748B', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center' },
+    compareCell: { flex: 1, fontSize: 13, color: '#64748B', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center' },
     compareCellNo: { color: '#CBD5E1' },
 
     // CTA
-    ctaSection: { paddingHorizontal: 20, paddingTop: 20 },
-    ctaBtn: { borderRadius: 20, overflow: 'hidden', marginBottom: 12, shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
-    ctaGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 18 },
-    ctaText: { fontSize: 17, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
-    ctaNote: { fontSize: 12, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center', marginBottom: 12 },
+    ctaSection: { paddingHorizontal: 20, paddingTop: 30, paddingBottom: 20 },
+    ctaBtn: { borderRadius: 20, overflow: 'hidden', marginBottom: 16, shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 12 },
+    ctaGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 20 },
+    ctaText: { fontSize: 18, fontFamily: theme.typography.fontFamily.bold, color: '#FFF' },
+    ctaNote: { fontSize: 13, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, textAlign: 'center', marginBottom: 14 },
     restoreBtn: { alignItems: 'center', paddingVertical: 8 },
-    restoreBtnText: { fontSize: 13, color: '#94A3B8', fontFamily: theme.typography.fontFamily.medium, textDecorationLine: 'underline' },
+    restoreBtnText: { fontSize: 14, color: '#64748B', fontFamily: theme.typography.fontFamily.medium, textDecorationLine: 'underline' },
 });

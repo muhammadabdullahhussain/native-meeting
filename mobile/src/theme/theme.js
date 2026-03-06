@@ -23,6 +23,12 @@ export const theme = {
     error: '#EF4444',        // Red 500
     glass: 'rgba(255, 255, 255, 0.7)',
     glassDark: 'rgba(15, 23, 42, 0.8)',
+    dark: {
+      background: '#080E1D',
+      surface: '#0D1526',
+      text: '#FFFFFF',
+      border: '#1E293B',
+    }
   },
   gradients: {
     primary: ['#6366F1', '#4F46E5'],

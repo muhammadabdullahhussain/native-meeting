@@ -90,7 +90,11 @@ exports.discoverNearbyUsers = async (
 
   let aggregatedUsers;
 
-  if (hasRealLocation) {
+  if (filters.isWorldwide) {
+    // Worldwide mode: show users by match score (ignore distance)
+    const users = await User.find(query).skip(skip).limit(limit).lean();
+    aggregatedUsers = users.map((u) => ({ ...u, distanceMeters: null }));
+  } else if (hasRealLocation) {
     // Geo-based query: show users within maxDistance km
     aggregatedUsers = await User.aggregate([
       {
@@ -115,7 +119,10 @@ exports.discoverNearbyUsers = async (
         .skip(skip)
         .limit(limit)
         .lean();
-      aggregatedUsers = fallbackUsers.map(u => ({ ...u, distanceMeters: null }));
+      aggregatedUsers = fallbackUsers.map((u) => ({
+        ...u,
+        distanceMeters: null,
+      }));
     }
   } else {
     // Fallback: no location yet — show users by match score (ignore distance)

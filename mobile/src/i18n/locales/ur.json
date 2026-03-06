@@ -110,8 +110,31 @@
       "unlimited_groups": "لامحدود گروپس میں شامل ہوں",
       "verified_badge": "تصدیق شدہ پروفائل بیج",
       "see_who_likes": "دیکھیں کہ آپ کو کون پسند کرتا ہے",
-      "incognito": "انکوگنیٹو موڈ"
-    }
+      "incognito": "انکوگنیٹو موڈ",
+      "priority_search": "تلاش میں ترجیح"
+    },
+    "premium_only": "صرف پریمیم",
+    "upgrade_now": "ابھی اپ گریڈ کریں",
+    "highlights": {
+      "unlimited_chats_desc": "بغیر پابندی کے غیر محدود لوگوں سے چیٹ کریں",
+      "create_groups": "گروپ بنائیں",
+      "create_groups_desc": "اپنی کمیونٹیز بنائیں اور منظم کریں",
+      "priority_discovery": "ترجیحی دریافت",
+      "priority_desc": "زیادہ لوگوں کو پہلے نظر آئیں",
+      "profile_viewers": "پروفائل دیکھنے والے",
+      "viewers_desc": "دیکھیں آپ کا پروفائل کس نے دیکھا",
+      "badge_desc": "تصدیق شدہ بیج کے ساتھ نمایاں ہوں",
+      "filters_desc": "بہتر مماثلت کے لیے جدید فلٹرز"
+    },
+    "welcome_toast": "پریمیم میں خوش آمدید! 🎉",
+    "welcome_msg": "اب آپ کو تمام پریمیم فیچرز تک رسائی ہے۔",
+    "failed_payment": "ادائیگی ناکام۔ دوبارہ کوشش کریں۔",
+    "active_sub": "فعال سبسکرپشن",
+    "popular": "مقبول",
+    "feature": "فیچر",
+    "free": "مفت",
+    "premium": "پریمیم",
+    "no_purchases": "بحال کرنے کے لیے کوئی خریداری نہیں۔"
   },
   "interests_manager": {
     "title": "مفادات",
@@ -132,7 +155,27 @@
     "limit_reached": "پریمیم کے ساتھ اپنی پوری صلاحیت تک پہنچیں اور لامحدود مفادات منتخب کریں۔",
     "upgrade_now": "ابھی اپ گریڈ کریں",
     "saving": "محفوظ ہو رہا ہے...",
-    "done": "مکمل"
+    "done": "مکمل",
+    "server_load_failed": "سرور سے دلچسپیاں لوڈ نہیں ہو سکیں",
+    "custom_tags_premium": "کسٹم ٹیگز پریمیم فیچر ہیں۔",
+    "invalid_tag": "غلط ٹیگ",
+    "tag_length_error": "ٹیگ 2-30 حروف کا ہونا چاہیے۔",
+    "already_added": "پہلے سے شامل",
+    "already_added_msg": "یہ دلچسپی پہلے سے آپ کی فہرست میں ہے۔",
+    "limit_reached_msg": "آپ زیادہ سے زیادہ دلچسپیوں تک پہنچ گئے ہیں۔",
+    "custom_tag_added": "کسٹم ٹیگ شامل ہو گیا!",
+    "tag_exists_added": "دلچسپی پہلے سے موجود ہے اور شامل کر دی گئی ہے۔",
+    "limit_reached_count": "حد پوری ہو گئی ({{count}}/{{max}})",
+    "updated_toast": "دلچسپیاں اپ ڈیٹ ہو گئیں!",
+    "failed_save": "دلچسپیاں محفوظ نہیں ہو سکیں",
+    "selected": "منتخب",
+    "unlock_custom_tags": "کسٹم ٹیگز ان لاک کریں",
+    "add_unlimited_desc": "غیر محدود دلچسپیاں اور کسٹم ٹیگز شامل کریں",
+    "focus_title": "دلچسپیوں کا مرکز",
+    "no_interests_selected": "ابھی تک کوئی دلچسپی منتخب نہیں۔",
+    "browse_to_add": "شامل کرنے کے لیے براؤز کریں!",
+    "active": "فعال",
+    "limit_banner_desc": "پریمیم کے ساتھ اپنی مکمل صلاحیت تک پہنچیں اور غیر محدود دلچسپیاں منتخب کریں۔"
   },
   "common": {
     "next": "اگلا",
@@ -148,7 +191,12 @@
     "info": "معلومات",
     "ok": "ٹھیک ہے",
     "yes": "ہاں",
-    "no": "نہیں"
+    "no": "نہیں",
+    "men": "مرد",
+    "women": "خواتین",
+    "non_binary": "غیر بائنری",
+    "press_back_again": "باہر نکلنے کے لیے دوبارہ واپس دبائیں",
+    "loading_more": "مزید لوڈ ہو رہا ہے..."
   },
   "auth": {
     "welcome_back": "خوش آمدید!",
@@ -288,8 +336,40 @@
     "age_range": "عمر کی حد",
     "age_range_label": "{{min}}–{{max}} سال",
     "show_me": "مجھے دکھائیں",
-    "looking_for": "تلاش ہے",
-    "availability": "دستیابی",
+    "looking_for": {
+      "0": "ت",
+      "1": "ل",
+      "2": "ا",
+      "3": "ش",
+      "4": " ",
+      "5": "ہ",
+      "6": "ے",
+      "anyone": "کوئی بھی",
+      "coffee": "کافی چیٹ",
+      "study": "مطالعہ ساتھی",
+      "collab": "تعاون ساتھی",
+      "networking": "نیٹ ورکنگ",
+      "mentorship": "رہنمائی",
+      "friendship": "دوستی",
+      "travel": "سفر ساتھی",
+      "workout": "ورزش ساتھی",
+      "language": "زبان تبادلہ"
+    },
+    "availability": {
+      "0": "د",
+      "1": "س",
+      "2": "ت",
+      "3": "ی",
+      "4": "ا",
+      "5": "ب",
+      "6": "ی",
+      "weekdays": "ہفتے کے دن",
+      "weekends": "ہفتے کے آخر",
+      "mornings": "صبح",
+      "evenings": "شام",
+      "nights": "رات",
+      "flexible": "لچکدار"
+    },
     "languages": "زبانیں",
     "shared_interests": "مشترکہ مفادات",
     "shared_interests_sub": "ان لوگوں کو دکھائیں جو آپ کی دلچسپیاں رکھتے ہیں",
@@ -314,7 +394,28 @@
       "travel_buddy": "ٹریول بڈی",
       "workout_partner": "ورزش پارٹنر",
       "language_exchange": "زبان کا تبادلہ"
-    }
+    },
+    "title": "دریافت",
+    "all": "سب",
+    "could_not_load": "ڈیٹا لوڈ نہیں ہو سکا",
+    "failed_request": "درخواست بھیجنے میں ناکامی",
+    "match": "مماثلت",
+    "location_updated": "مقام اپ ڈیٹ ہو گیا",
+    "location_found": "آپ کا مقام معلوم ہو گیا ہے۔",
+    "location_required_title": "مقام ضروری ہے",
+    "location_required_msg": "قریبی لوگوں کو دریافت کرنے کے لیے مقام کی خدمات فعال کریں۔",
+    "open_settings": "سیٹنگز کھولیں",
+    "browse": "براؤز",
+    "add_interests_title": "دلچسپیاں شامل کریں",
+    "add_interests_desc": "بہتر مماثلت کے لیے دلچسپیاں شامل کریں۔",
+    "no_people_desc": "آپ کے فلٹرز سے کوئی مماثل نہیں۔",
+    "no_one_range_title": "رینج میں کوئی نہیں",
+    "no_one_range_desc": "تلاش کا دائرہ بڑھائیں۔",
+    "newest": "نئے ترین",
+    "online": "آن لائن",
+    "looking_for_title": "تلاش",
+    "availability_title": "دستیابی",
+    "languages_title": "زبانیں"
   },
   "groups": {
     "join": "شامل ہوں",
@@ -369,14 +470,20 @@
       "unmute": "Unmute",
       "mute": "خاموش کریں",
       "block": "بلاک کریں",
-      "cancel": "منسوخ کریں"
+      "cancel": "منسوخ کریں",
+      "decline": "مسترد",
+      "nearby": "قریبی"
     },
     "request": {
       "incoming_msg": "ہیلو، آئیے جڑتے ہیں!",
       "decline": "مسترد کریں",
       "accept": "قبول کریں",
       "accepted_toast": "✅ قبول کر لیا گیا!",
-      "connected_with": "اب آپ {{name}} سے جڑ چکے ہیں۔"
+      "connected_with": "اب آپ {{name}} سے جڑ چکے ہیں۔",
+      "failed_accept": "درخواست قبول نہیں ہو سکی",
+      "failed_decline": "درخواست مسترد نہیں ہو سکی",
+      "join_sent_msg": "آپ کی شمولیت کی درخواست بھیج دی گئی ہے۔",
+      "failed_join": "شمولیت کی درخواست ناکام"
     },
     "group": {
       "premium_badge": "👑 پریمیم گروپ",
@@ -396,7 +503,12 @@
       "create_group_btn": "گروپ بنائیں",
       "go_premium_btn": "پریمیم حاصل کریں",
       "go_premium_banner": "👑 لامحدود گروپس کے لیے پریمیم حاصل کریں ← $3.99/ماہ",
-      "premium_create_banner": "👑 پریمیم: اپنے گروپ کو مفادات کے ذریعے دریافت کے قابل بنائیں ← $3.99/ماہ"
+      "premium_create_banner": "👑 پریمیم: اپنے گروپ کو مفادات کے ذریعے دریافت کے قابل بنائیں ← $3.99/ماہ",
+      "joined_toast": "شامل ہو گئے! 🎉",
+      "joined_msg": "آپ گروپ میں شامل ہو گئے ہیں۔",
+      "failed_join": "گروپ میں شامل ہونے میں ناکامی",
+      "create_public": "عوامی گروپ بنائیں",
+      "discovery": "گروپ دریافت"
     },
     "referral": {
       "unlock_title": "گروپ ڈسکوری انلاک کریں 🎁",
@@ -415,13 +527,16 @@
       "name_required": "براہ کرم گروپ کا نام درج کریں۔",
       "member_required": "کم از کم ایک رکن شامل کریں۔",
       "success_title": "کامیابی! 🚀",
-      "success_msg": "گروپ کامیابی سے بن گیا"
+      "success_msg": "گروپ کامیابی سے بن گیا",
+      "failed": "گروپ بنانے میں ناکامی",
+      "no_interests": "مماثل دلچسپیاں نہیں ملیں"
     },
     "block_user": {
       "title": "صارف کو بلاک کریں؟ 🚫",
       "message": "کیا آپ واقعی {{name}} کو بلاک کرنا چاہتے ہیں؟ وہ آپ کو پیغامات نہیں بھیج سکیں گے اور نہ ہی آپ کا پروفائل دیکھ سکیں گے۔",
       "success_title": "صارف بلاک ہو گیا",
-      "success_msg": "{{name}} پر پابندی لگا دی گئی ہے۔"
+      "success_msg": "{{name}} پر پابندی لگا دی گئی ہے۔",
+      "failed": "صارف بلاک نہیں ہو سکا"
     },
     "decline_request": {
       "title": "درخواست مسترد کریں؟",
@@ -430,8 +545,20 @@
     "invite": {
       "copied_title": "دعوت نامہ لنک کاپی ہو گیا!",
       "copied_msg": "اسے اپنے دوستوں کے ساتھ شیئر کریں۔",
-      "share_msg": "ہیلو! مشترکہ مفادات رکھنے والے لوگوں کو تلاش کرنے کے لیے BondUs پر میرے ساتھ شامل ہوں۔ میرا لنک استعمال کریں: {{url}}"
-    }
+      "share_msg": "ہیلو! مشترکہ مفادات رکھنے والے لوگوں کو تلاش کرنے کے لیے BondUs پر میرے ساتھ شامل ہوں۔ میرا لنک استعمال کریں: {{url}}",
+      "failed_share": "دعوت شیئر نہیں ہو سکی"
+    },
+    "fetch_error": "بات چیت لوڈ نہیں ہو سکی",
+    "limit_reached": "بات چیت کی حد پوری ہو گئی",
+    "limit_usage": "{{count}}/{{max}} بات چیت استعمال ہو چکی",
+    "search_chats_placeholder": "چیٹ تلاش کریں...",
+    "search_groups_placeholder": "گروپ تلاش کریں...",
+    "no_chats_title": "کوئی چیٹ نہیں ملی",
+    "no_results_desc": "مختلف الفاظ سے تلاش کریں۔",
+    "no_chats_desc": "کسی سے بات چیت شروع کریں۔",
+    "discover_people_action": "لوگ دریافت کریں",
+    "no_requests_title": "کوئی درخواست نہیں",
+    "no_requests_desc": "ابھی کوئی زیر التوا درخواست نہیں۔"
   },
   "profile": {
     "title": "پروفائل",
@@ -532,7 +659,13 @@
     "message_placeholder": "پیغام...",
     "voice_message": "وائس میسیج",
     "camera": "کیمرہ",
-    "replying": "جواب دے رہے ہیں: {{text}}"
+    "replying": "جواب دے رہے ہیں: {{text}}",
+    "report_title": "صارف کی رپورٹ کریں",
+    "report_placeholder": "مسئلہ بیان کریں...",
+    "report_success": "رپورٹ جمع ہو گئی",
+    "report_success_msg": "شکریہ۔ ہم اس رپورٹ کا جائزہ لیں گے۔",
+    "submit_report": "رپورٹ جمع کریں",
+    "reactions": "ری ایکشنز"
   },
   "user_profile": {
     "connect": "جڑیں",
@@ -576,6 +709,15 @@
     "unblock_confirm": "ان بلاک",
     "block_title": "بلاک کریں",
     "block_msg": "کیا آپ {{name}} کو بلاک کرنا چاہتے ہیں؟",
-    "block_confirm": "بلاک"
+    "block_confirm": "بلاک",
+    "connection_sent": "درخواست بھیج دی گئی! ✉️",
+    "connection_sent_msg": "آپ کی کنکشن کی درخواست بھیج دی گئی ہے۔",
+    "blocked_title": "صارف بلاک ہو گیا",
+    "blocked_msg": "{{name}} کو محدود کر دیا گیا ہے۔",
+    "report_title": "صارف کی رپورٹ کریں",
+    "report_placeholder": "مسئلہ بیان کریں...",
+    "report_success": "رپورٹ جمع ہو گئی",
+    "report_success_msg": "شکریہ۔ ہم اس رپورٹ کا جائزہ لیں گے۔",
+    "submit_report": "رپورٹ جمع کریں"
   }
 }

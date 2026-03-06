@@ -19,6 +19,7 @@ exports.getDiscover = catchAsync(async (req, res, next) => {
     isVerified,
     availability,
     languages,
+    isWorldwide,
   } = req.query;
   const currentUser = req.user;
 
@@ -41,6 +42,7 @@ exports.getDiscover = catchAsync(async (req, res, next) => {
       maxAge,
       availability: availability ? availability.split(",") : undefined,
       languages: languages ? languages.split(",") : undefined,
+      isWorldwide: isWorldwide === "true",
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 20,
       sortBy: req.query.sortBy || "distance",
@@ -54,7 +56,7 @@ exports.getDiscover = catchAsync(async (req, res, next) => {
     data: finalUsers,
     message:
       finalUsers.length === 0 &&
-      (!currentUser.location || !currentUser.location.coordinates)
+        (!currentUser.location || !currentUser.location.coordinates)
         ? "Please set your location to discover people nearby"
         : undefined,
   });

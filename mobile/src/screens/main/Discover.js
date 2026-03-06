@@ -225,6 +225,7 @@ export default function Discover({ navigation }) {
   const [filterAgeMax, setFilterAgeMax] = useState(60);
   const [filterLanguages, setFilterLanguages] = useState([]);
   const [filterGender, setFilterGender] = useState("Anyone");
+  const [filterIsWorldwide, setFilterIsWorldwide] = useState(false);
   const [users, setUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -385,6 +386,7 @@ export default function Discover({ navigation }) {
             filterLanguages.length > 0 ? filterLanguages.join(",") : undefined,
           interests:
             interestsParam.length > 0 ? interestsParam.join(",") : undefined,
+          isWorldwide: filterIsWorldwide || undefined,
           page: currentPage,
           limit: 20,
           sortBy: sortBy,
@@ -436,6 +438,7 @@ export default function Discover({ navigation }) {
       showToast,
       isAuthenticated,
       sortBy,
+      filterIsWorldwide,
       // Removed page, hasMore, isMoreLoading
     ],
   );
@@ -601,6 +604,7 @@ export default function Discover({ navigation }) {
     setFilterGender("Anyone");
     setFilterAgeMin(18);
     setFilterAgeMax(60);
+    setFilterIsWorldwide(false);
     setSortBy("distance");
   };
 
@@ -701,7 +705,11 @@ export default function Discover({ navigation }) {
                 <Feather name="map-pin" size={11} color="#94A3B8" />
                 <Text style={styles.locationText}>
                   {item.city || t("discover.nearby")} •{" "}
-                  {item.distanceKm <= 1 ? t("discover.nearby_tag") : item.distanceKm ? t("discover.distance_km", { distance: item.distanceKm }) : t("discover.nearby")}
+                  {item.distanceKm === null
+                    ? t("discover.worldwide", "Worldwide")
+                    : item.distanceKm <= 1
+                      ? t("discover.nearby_tag")
+                      : t("discover.distance_km", { distance: item.distanceKm })}
                 </Text>
               </View>
             </View>
@@ -1370,7 +1378,7 @@ export default function Discover({ navigation }) {
             style={{ flex: 1 }}
             onPress={() => setFilterVisible(false)}
           />
-          <View style={[styles.sheet, { maxHeight: "85%" }]}>
+          <View style={[styles.sheet, { height: "90%" }]}>
             {/* Handle */}
             <View style={styles.sheetHandle} />
 
@@ -1389,10 +1397,38 @@ export default function Discover({ navigation }) {
 
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.sheetBody}
+              style={{ flex: 1 }}
+              contentContainerStyle={[styles.sheetBody, { paddingBottom: 40 }]}
             >
-              {/* ── TOGGLE ROW: Online & Verified ── */}
+              {/* ── TOGGLE ROW: Online, Verified & Worldwide ── */}
               <View style={styles.filterSectionCard}>
+                <View style={styles.filterToggleRow}>
+                  <View style={styles.filterToggleLeft}>
+                    <View
+                      style={[
+                        styles.filterIcon,
+                        { backgroundColor: "#EEF2FF" },
+                      ]}
+                    >
+                      <Feather name="globe" size={16} color="#6366F1" />
+                    </View>
+                    <View>
+                      <Text style={styles.filterLabel}>{t("discover.worldwide")}</Text>
+                      <Text style={styles.filterSub}>
+                        {t("discover.worldwide_sub")}
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={filterIsWorldwide}
+                    onValueChange={setFilterIsWorldwide}
+                    trackColor={{ false: "#E2E8F0", true: "#BFDBFE" }}
+                    thumbColor={
+                      filterIsWorldwide ? theme.colors.primary : "#94A3B8"
+                    }
+                  />
+                </View>
+                <View style={styles.filterDividerLight} />
                 <View style={styles.filterToggleRow}>
                   <View style={styles.filterToggleLeft}>
                     <View

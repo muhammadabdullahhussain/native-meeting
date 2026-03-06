@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: bondus-backend
+    env: node
+    region: ohio
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: MONGO_URI
+        value: mongodb+srv://native-meeting:native-meeting@cluster0.ijey1ja.mongodb.net/native-meeting?retryWrites=true&w=majority
+      - key: JWT_SECRET
+        value: your_super_secret_jwt_key_here
+      - key: CLOUDINARY_CLOUD_NAME
+        value: dtbodjmp5
+      - key: CLOUDINARY_API_KEY
+        value: 442585964979862
+      - key: CLOUDINARY_API_SECRET
+        value: CyrAuCDuboILs2MHWVDYbtzMAJs

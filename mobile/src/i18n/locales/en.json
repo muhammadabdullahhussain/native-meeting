@@ -95,6 +95,7 @@
     "monthly": "Monthly",
     "six_months": "6 Months",
     "yearly": "Yearly",
+    "lifetime": "Lifetime",
     "billed_as": "Billed as {{amount}}",
     "vs_monthly": "vs monthly",
     "what_you_get": "What You Get",
@@ -107,11 +108,35 @@
     "features": {
       "unlimited_convo": "Unlimited Conversations",
       "advanced_filters": "Advanced Discovery Filters",
+      "custom_interests": "Custom Interest Tags",
       "unlimited_groups": "Join Unlimited Groups",
       "verified_badge": "Verified Profile Badge",
       "see_who_likes": "See Who Likes You",
-      "incognito": "Incognito Mode"
-    }
+      "incognito": "Incognito Mode",
+      "priority_search": "Priority in Search"
+    },
+    "premium_only": "Premium Only",
+    "upgrade_now": "Upgrade Now",
+    "highlights": {
+      "unlimited_chats_desc": "Chat with unlimited people without restrictions",
+      "create_groups": "Create Groups",
+      "create_groups_desc": "Create and manage your own communities",
+      "priority_discovery": "Priority Discovery",
+      "priority_desc": "Get seen first by more people",
+      "profile_viewers": "Profile Viewers",
+      "viewers_desc": "See who viewed your profile",
+      "badge_desc": "Stand out with a verified badge",
+      "filters_desc": "Advanced filters for better matches"
+    },
+    "welcome_toast": "Welcome to Premium! 🎉",
+    "welcome_msg": "You now have access to all premium features.",
+    "failed_payment": "Payment failed. Please try again.",
+    "active_sub": "Active Subscription",
+    "popular": "Popular",
+    "feature": "Feature",
+    "free": "Free",
+    "premium": "Premium",
+    "no_purchases": "No purchases to restore."
   },
   "interests_manager": {
     "title": "Interests",
@@ -132,7 +157,27 @@
     "limit_reached": "Reach your full potential with Premium and select unlimited interests.",
     "upgrade_now": "Upgrade Now",
     "saving": "Saving...",
-    "done": "Done"
+    "done": "Done",
+    "server_load_failed": "Failed to load interests from server",
+    "custom_tags_premium": "Custom tags are a Premium feature.",
+    "invalid_tag": "Invalid Tag",
+    "tag_length_error": "Tag must be 2-30 characters.",
+    "already_added": "Already Added",
+    "already_added_msg": "This interest is already in your list.",
+    "limit_reached_msg": "You've reached the maximum number of interests.",
+    "custom_tag_added": "Custom tag added!",
+    "tag_exists_added": "Interest already exists and has been added.",
+    "limit_reached_count": "Limit reached ({{count}}/{{max}})",
+    "updated_toast": "Interests updated!",
+    "failed_save": "Failed to save interests",
+    "selected": "selected",
+    "unlock_custom_tags": "Unlock Custom Tags",
+    "add_unlimited_desc": "Add unlimited interests & custom tags",
+    "focus_title": "Interests Focus",
+    "no_interests_selected": "No interests selected yet.",
+    "browse_to_add": "Browse to add some!",
+    "active": "active",
+    "limit_banner_desc": "Reach your full potential with Premium and select unlimited interests."
   },
   "common": {
     "next": "Next",
@@ -148,7 +193,12 @@
     "info": "Info",
     "ok": "OK",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "men": "Men",
+    "women": "Women",
+    "non_binary": "Non-binary",
+    "press_back_again": "Press back again to exit",
+    "loading_more": "Loading more..."
   },
   "auth": {
     "welcome_back": "Welcome back!",
@@ -294,6 +344,8 @@
     "shared_interests": "Shared Interests",
     "shared_interests_sub": "Show people who share your passions",
     "apply_filters": "Apply Filters",
+    "worldwide": "Worldwide Connect",
+    "worldwide_sub": "Meet people from all over the world",
     "close": "Close",
     "distance": "Distance",
     "min_age": "Min Age",
@@ -314,7 +366,28 @@
       "travel_buddy": "Travel Buddy",
       "workout_partner": "Workout Partner",
       "language_exchange": "Language Exchange"
-    }
+    },
+    "title": "Discover",
+    "all": "All",
+    "could_not_load": "Could not load data",
+    "failed_request": "Failed to send request",
+    "match": "Match",
+    "location_updated": "Location Updated",
+    "location_found": "Your location has been detected.",
+    "location_required_title": "Location Required",
+    "location_required_msg": "Please enable location services to discover people nearby.",
+    "open_settings": "Open Settings",
+    "browse": "Browse",
+    "add_interests_title": "Add Interests",
+    "add_interests_desc": "Add interests to find better matches.",
+    "no_people_desc": "No people match your current filters.",
+    "no_one_range_title": "No one in range",
+    "no_one_range_desc": "Try expanding your search radius.",
+    "newest": "Newest",
+    "online": "Online",
+    "looking_for_title": "Looking For",
+    "availability_title": "Availability",
+    "languages_title": "Languages"
   },
   "groups": {
     "join": "Join",
@@ -369,14 +442,20 @@
       "unmute": "Unmute",
       "mute": "Mute",
       "block": "Block",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "decline": "Decline",
+      "nearby": "Nearby"
     },
     "request": {
       "incoming_msg": "Hey, let's connect!",
       "decline": "Decline",
       "accept": "Accept",
       "accepted_toast": "✅ Accepted!",
-      "connected_with": "You are now connected with {{name}}."
+      "connected_with": "You are now connected with {{name}}.",
+      "failed_accept": "Failed to accept request",
+      "failed_decline": "Failed to decline request",
+      "join_sent_msg": "Your join request has been sent.",
+      "failed_join": "Failed to send join request"
     },
     "group": {
       "premium_badge": "👑 Premium Group",
@@ -396,7 +475,12 @@
       "create_group_btn": "Create Group",
       "go_premium_btn": "Go Premium",
       "go_premium_banner": "👑 Go Premium for unlimited group access → $3.99/mo",
-      "premium_create_banner": "👑 Premium: Make your group discoverable by interest → $3.99/mo"
+      "premium_create_banner": "👑 Premium: Make your group discoverable by interest → $3.99/mo",
+      "joined_toast": "Joined! 🎉",
+      "joined_msg": "You have joined the group.",
+      "failed_join": "Failed to join group",
+      "create_public": "Create Public Groups",
+      "discovery": "Group Discovery"
     },
     "referral": {
       "unlock_title": "Unlock Group Discovery 🎁",
@@ -415,13 +499,16 @@
       "name_required": "Please enter a group name.",
       "member_required": "Add at least one member.",
       "success_title": "Success! 🚀",
-      "success_msg": "Group created successfully"
+      "success_msg": "Group created successfully",
+      "failed": "Failed to create group",
+      "no_interests": "No matching interests found"
     },
     "block_user": {
       "title": "Block User? 🚫",
       "message": "Are you sure you want to block {{name}}? They won't be able to message you or see your profile.",
       "success_title": "User Blocked",
-      "success_msg": "{{name}} has been restricted."
+      "success_msg": "{{name}} has been restricted.",
+      "failed": "Failed to block user"
     },
     "decline_request": {
       "title": "Decline Request?",
@@ -430,8 +517,20 @@
     "invite": {
       "copied_title": "Invite Link Copied!",
       "copied_msg": "Share this with your friends.",
-      "share_msg": "Hey! Join me on BondUs to find people with shared interests. Use my link: {{url}}"
-    }
+      "share_msg": "Hey! Join me on BondUs to find people with shared interests. Use my link: {{url}}",
+      "failed_share": "Failed to share invite"
+    },
+    "fetch_error": "Failed to load conversations",
+    "limit_reached": "Conversation Limit Reached",
+    "limit_usage": "{{count}}/{{max}} conversations used",
+    "search_chats_placeholder": "Search chats...",
+    "search_groups_placeholder": "Search groups...",
+    "no_chats_title": "No chats found",
+    "no_results_desc": "Try a different search term.",
+    "no_chats_desc": "Start a conversation with someone.",
+    "discover_people_action": "Discover People",
+    "no_requests_title": "No requests",
+    "no_requests_desc": "No pending requests right now."
   },
   "profile": {
     "title": "Profile",

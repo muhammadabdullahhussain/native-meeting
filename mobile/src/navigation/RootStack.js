@@ -1,9 +1,27 @@
 import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { useAuth } from '../context/AuthContext';
+import { theme } from '../theme/theme';
+
+const DarkNavigationTheme = {
+    ...DefaultTheme,
+    dark: true,
+    colors: {
+        ...DefaultTheme.colors,
+        primary: theme.colors.primary,
+        background: '#080E1D',
+        card: '#080E1D',
+        text: '#FFFFFF',
+        border: '#1E293B',
+        notification: theme.colors.secondary,
+    },
+};
+
+// Registration handled in App.js
 
 // Auth screens
 import AuthStack from './AuthStack';
@@ -36,27 +54,36 @@ function AuthLoadingScreen() {
 }
 
 export default function RootStack() {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated } = useAuth();
 
-    // While AsyncStorage is loading the stored session, show a spinner
-    if (isLoading) {
-        return <AuthLoadingScreen />;
-    }
+    React.useEffect(() => {
+        // Hide the native splash screen as soon as RootStack mounts
+        // This ensures the transition is as smooth as possible
+        const hideNativeSplash = async () => {
+            try {
+                // We add a tiny delay to ensure the custom Splash component has its first frame drawn
+                await new Promise(resolve => setTimeout(resolve, 50));
+                await SplashScreen.hideAsync();
+            } catch (e) {
+                // Already hidden or errored
+            }
+        };
+        hideNativeSplash();
+    }, []);
 
     return (
-        <NavigationContainer>
+        <NavigationContainer theme={DarkNavigationTheme}>
             <Stack.Navigator
                 screenOptions={{ headerShown: false, animation: 'fade' }}
                 // Route user directly based on real session state
-                initialRouteName={isAuthenticated ? 'MainApp' : 'Splash'}
+                initialRouteName="Splash"
             >
+                <Stack.Screen name="Splash" component={Splash} />
                 {!isAuthenticated ? (
                     // ── Auth Routes (not logged in) ─────────────────────────────
-                    <>
-                        <Stack.Screen name="Splash" component={Splash} />
-                        <Stack.Screen name="Auth" component={AuthStack} />
-                    </>
+                    <Stack.Screen name="Auth" component={AuthStack} />
                 ) : (
+                    // ── Main App Routes (logged in) ─────────────────────────────
                     // ── Main App Routes (logged in) ─────────────────────────────
                     <>
                         <Stack.Screen name="MainApp" component={MainTabs} />

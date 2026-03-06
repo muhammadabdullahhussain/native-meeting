@@ -110,8 +110,31 @@
       "unlimited_groups": "Неограниченное вступление в группы",
       "verified_badge": "Значок подтвержденного профиля",
       "see_who_likes": "Смотрите, кто вас лайкнул",
-      "incognito": "Режим инкогнито"
-    }
+      "incognito": "Режим инкогнито",
+      "priority_search": "Приоритет в поиске"
+    },
+    "premium_only": "Только Premium",
+    "upgrade_now": "Обновить сейчас",
+    "highlights": {
+      "unlimited_chats_desc": "Общайтесь без ограничений",
+      "create_groups": "Создание групп",
+      "create_groups_desc": "Создавайте свои сообщества",
+      "priority_discovery": "Приоритетный поиск",
+      "priority_desc": "Вас увидят первым",
+      "profile_viewers": "Просмотры профиля",
+      "viewers_desc": "Узнайте, кто смотрел ваш профиль",
+      "badge_desc": "Выделяйтесь с верифицированным значком",
+      "filters_desc": "Продвинутые фильтры для лучших совпадений"
+    },
+    "welcome_toast": "Добро пожаловать в Premium! 🎉",
+    "welcome_msg": "Теперь у вас доступ ко всем премиум-функциям.",
+    "failed_payment": "Оплата не прошла. Попробуйте снова.",
+    "active_sub": "Активная подписка",
+    "popular": "Популярный",
+    "feature": "Функция",
+    "free": "Бесплатно",
+    "premium": "Премиум",
+    "no_purchases": "Нет покупок для восстановления."
   },
   "interests_manager": {
     "title": "Интересы",
@@ -132,7 +155,27 @@
     "limit_reached": "Раскройте свой полный потенциал с Premium и выбирайте неограниченные интересы.",
     "upgrade_now": "Обновить сейчас",
     "saving": "Сохранение...",
-    "done": "Готово"
+    "done": "Готово",
+    "server_load_failed": "Не удалось загрузить интересы",
+    "custom_tags_premium": "Пользовательские теги — премиум-функция.",
+    "invalid_tag": "Недопустимый тег",
+    "tag_length_error": "Тег должен быть 2-30 символов.",
+    "already_added": "Уже добавлено",
+    "already_added_msg": "Этот интерес уже в вашем списке.",
+    "limit_reached_msg": "Достигнуто максимальное количество интересов.",
+    "custom_tag_added": "Тег добавлен!",
+    "tag_exists_added": "Интерес уже существует и добавлен.",
+    "limit_reached_count": "Лимит достигнут ({{count}}/{{max}})",
+    "updated_toast": "Интересы обновлены!",
+    "failed_save": "Не удалось сохранить",
+    "selected": "выбрано",
+    "unlock_custom_tags": "Разблокировать теги",
+    "add_unlimited_desc": "Добавляйте неограниченные интересы и теги",
+    "focus_title": "Фокус интересов",
+    "no_interests_selected": "Интересы ещё не выбраны.",
+    "browse_to_add": "Добавьте через обзор!",
+    "active": "активно",
+    "limit_banner_desc": "Раскройте потенциал с Premium и выбирайте неограниченные интересы."
   },
   "common": {
     "next": "Далее",
@@ -148,7 +191,12 @@
     "info": "Информация",
     "ok": "ОК",
     "yes": "Да",
-    "no": "Нет"
+    "no": "Нет",
+    "men": "Мужчины",
+    "women": "Женщины",
+    "non_binary": "Небинарные",
+    "press_back_again": "Нажмите назад ещё раз для выхода",
+    "loading_more": "Загрузка..."
   },
   "auth": {
     "welcome_back": "С возвращением!",
@@ -288,8 +336,40 @@
     "age_range": "Возраст",
     "age_range_label": "{{min}}–{{max}} лет",
     "show_me": "Показывать мне",
-    "looking_for": "Ищу",
-    "availability": "Доступность",
+    "looking_for": {
+      "0": "И",
+      "1": "щ",
+      "2": "у",
+      "anyone": "Все",
+      "coffee": "Чат за кофе",
+      "study": "Партнёр по учёбе",
+      "collab": "Партнёр по проекту",
+      "networking": "Нетворкинг",
+      "mentorship": "Менторство",
+      "friendship": "Дружба",
+      "travel": "Попутчик",
+      "workout": "Партнёр по тренировке",
+      "language": "Обмен языками"
+    },
+    "availability": {
+      "0": "Д",
+      "1": "о",
+      "2": "с",
+      "3": "т",
+      "4": "у",
+      "5": "п",
+      "6": "н",
+      "7": "о",
+      "8": "с",
+      "9": "т",
+      "10": "ь",
+      "weekdays": "Будни",
+      "weekends": "Выходные",
+      "mornings": "Утро",
+      "evenings": "Вечер",
+      "nights": "Ночь",
+      "flexible": "Гибкий"
+    },
     "languages": "Языки",
     "shared_interests": "Общие интересы",
     "shared_interests_sub": "Показывать людей с такими же увлечениями",
@@ -314,7 +394,28 @@
       "travel_buddy": "Партнер по путешествиям",
       "workout_partner": "Партнер по тренировкам",
       "language_exchange": "Языковой обмен"
-    }
+    },
+    "title": "Поиск",
+    "all": "Все",
+    "could_not_load": "Не удалось загрузить",
+    "failed_request": "Не удалось отправить запрос",
+    "match": "Совпадение",
+    "location_updated": "Местоположение обновлено",
+    "location_found": "Ваше местоположение определено.",
+    "location_required_title": "Требуется местоположение",
+    "location_required_msg": "Включите геолокацию для поиска людей поблизости.",
+    "open_settings": "Открыть настройки",
+    "browse": "Обзор",
+    "add_interests_title": "Добавить интересы",
+    "add_interests_desc": "Добавьте интересы для лучших совпадений.",
+    "no_people_desc": "Нет людей по текущим фильтрам.",
+    "no_one_range_title": "Никого в радиусе",
+    "no_one_range_desc": "Попробуйте увеличить радиус.",
+    "newest": "Новые",
+    "online": "Онлайн",
+    "looking_for_title": "Ищу",
+    "availability_title": "Доступность",
+    "languages_title": "Языки"
   },
   "groups": {
     "join": "Вступить",
@@ -369,14 +470,20 @@
       "unmute": "Включить звук",
       "mute": "Без звука",
       "block": "Заблокировать",
-      "cancel": "Отмена"
+      "cancel": "Отмена",
+      "decline": "Отклонить",
+      "nearby": "Рядом"
     },
     "request": {
       "incoming_msg": "Привет, давай общаться!",
       "decline": "Отклонить",
       "accept": "Принять",
       "accepted_toast": "✅ Принято!",
-      "connected_with": "Вы установили контакт с {{name}}."
+      "connected_with": "Вы установили контакт с {{name}}.",
+      "failed_accept": "Не удалось принять запрос",
+      "failed_decline": "Не удалось отклонить запрос",
+      "join_sent_msg": "Ваш запрос на вступление отправлен.",
+      "failed_join": "Не удалось отправить запрос"
     },
     "group": {
       "premium_badge": "👑 Premium-группа",
@@ -396,7 +503,12 @@
       "create_group_btn": "Создать группу",
       "go_premium_btn": "Стать Premium",
       "go_premium_banner": "👑 Получите Premium для доступа ко всем группам → $3.99/мес",
-      "premium_create_banner": "👑 Premium: сделайте свою группу видимой по интересам → $3.99/мес"
+      "premium_create_banner": "👑 Premium: сделайте свою группу видимой по интересам → $3.99/мес",
+      "joined_toast": "Присоединились! 🎉",
+      "joined_msg": "Вы присоединились к группе.",
+      "failed_join": "Не удалось присоединиться",
+      "create_public": "Создать публичные группы",
+      "discovery": "Поиск групп"
     },
     "referral": {
       "unlock_title": "Разблокировать поиск групп 🎁",
@@ -415,13 +527,16 @@
       "name_required": "Пожалуйста, введите название группы.",
       "member_required": "Добавьте хотя бы одного участника.",
       "success_title": "Успех! 🚀",
-      "success_msg": "Группа успешно создана"
+      "success_msg": "Группа успешно создана",
+      "failed": "Не удалось создать группу",
+      "no_interests": "Совпадающие интересы не найдены"
     },
     "block_user": {
       "title": "Заблокировать пользователя? 🚫",
       "message": "Вы уверены, что хотите заблокировать пользователя {{name}}? Он не сможет писать вам и видеть ваш профиль.",
       "success_title": "Пользователь заблокирован",
-      "success_msg": "Доступ для {{name}} ограничен."
+      "success_msg": "Доступ для {{name}} ограничен.",
+      "failed": "Не удалось заблокировать"
     },
     "decline_request": {
       "title": "Отклонить запрос?",
@@ -430,8 +545,20 @@
     "invite": {
       "copied_title": "Ссылка скопирована!",
       "copied_msg": "Поделитесь ею с друзьями.",
-      "share_msg": "Привет! Присоединяйся ко мне в BondUs, чтобы находить людей с общими интересами. Моя ссылка: {{url}}"
-    }
+      "share_msg": "Привет! Присоединяйся ко мне в BondUs, чтобы находить людей с общими интересами. Моя ссылка: {{url}}",
+      "failed_share": "Не удалось поделиться"
+    },
+    "fetch_error": "Не удалось загрузить разговоры",
+    "limit_reached": "Лимит разговоров достигнут",
+    "limit_usage": "{{count}}/{{max}} разговоров использовано",
+    "search_chats_placeholder": "Поиск чатов...",
+    "search_groups_placeholder": "Поиск групп...",
+    "no_chats_title": "Чаты не найдены",
+    "no_results_desc": "Попробуйте другой запрос.",
+    "no_chats_desc": "Начните разговор с кем-нибудь.",
+    "discover_people_action": "Найти людей",
+    "no_requests_title": "Нет запросов",
+    "no_requests_desc": "Нет ожидающих запросов."
   },
   "profile": {
     "title": "Профиль",
@@ -532,7 +659,13 @@
     "message_placeholder": "Сообщение...",
     "voice_message": "Голосовое сообщение",
     "camera": "Камера",
-    "replying": "Ответ на: {{text}}"
+    "replying": "Ответ на: {{text}}",
+    "report_title": "Пожаловаться на пользователя",
+    "report_placeholder": "Опишите проблему...",
+    "report_success": "Жалоба отправлена",
+    "report_success_msg": "Спасибо. Мы рассмотрим эту жалобу.",
+    "submit_report": "Отправить жалобу",
+    "reactions": "Реакции"
   },
   "user_profile": {
     "connect": "Подключиться",
@@ -576,6 +709,15 @@
     "unblock_confirm": "Разблокировать",
     "block_title": "Заблокировать пользователя",
     "block_msg": "Вы уверены, что хотите заблокировать {{name}}?",
-    "block_confirm": "Заблокировать"
+    "block_confirm": "Заблокировать",
+    "connection_sent": "Запрос отправлен! ✉️",
+    "connection_sent_msg": "Ваш запрос на подключение был отправлен.",
+    "blocked_title": "Пользователь заблокирован",
+    "blocked_msg": "{{name}} был(а) ограничен(а).",
+    "report_title": "Пожаловаться на пользователя",
+    "report_placeholder": "Опишите проблему...",
+    "report_success": "Жалоба отправлена",
+    "report_success_msg": "Спасибо. Мы рассмотрим эту жалобу.",
+    "submit_report": "Отправить жалобу"
   }
 }

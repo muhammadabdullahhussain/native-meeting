@@ -60,11 +60,11 @@ apiClient.interceptors.response.use(
       try {
         await AsyncStorage.removeItem("@bondus_auth_token");
         await AsyncStorage.removeItem("@bondus_user");
-      } catch {}
+      } catch { }
       if (unauthorizedHandler) {
         try {
           unauthorizedHandler();
-        } catch {}
+        } catch { }
       }
     }
     return Promise.reject(error);
@@ -621,9 +621,9 @@ export const authService = {
     }
   },
 
-  upgradeToPremium: async () => {
+  upgradeToPremium: async (planId) => {
     try {
-      const response = await apiClient.post("/users/upgrade");
+      const response = await apiClient.post("/users/upgrade", { planId });
       return response.data;
     } catch (error) {
       throw { message: getErrorMessage(error) };

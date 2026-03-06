@@ -9,10 +9,16 @@ import { Toast } from './src/components/Toast';
 import RootStack from './src/navigation/RootStack';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Prevent the splash screen from hiding until we are ready
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* ignore */
+});
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#080E1D' }}>
       <SafeAreaProvider>
         <AuthProvider>
           <SocketProvider>

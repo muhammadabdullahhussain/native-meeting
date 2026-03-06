@@ -5,8 +5,8 @@
   "scripts": {
     "start": "expo start",
     "start:clean": "expo start --clear",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "dependencies": {
@@ -29,6 +29,7 @@
     "expo-linking": "~8.0.11",
     "expo-location": "~19.0.8",
     "expo-notifications": "~0.32.16",
+    "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
     "i18next": "^25.8.14",
     "react": "19.1.0",

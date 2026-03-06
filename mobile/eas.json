@@ -11,6 +11,10 @@
         "preview": {
             "android": {
                 "buildType": "apk"
+            },
+            "env": {
+                "EXPO_PUBLIC_API_URL": "https://bondus-backend.onrender.com/api",
+                "EXPO_PUBLIC_SOCKET_URL": "https://bondus-backend.onrender.com"
             }
         },
         "production": {

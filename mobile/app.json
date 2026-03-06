@@ -5,26 +5,37 @@
     "scheme": "bondus",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "backgroundColor": "#080E1D",
+    "icon": "./assets/splash.png",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#080E1D"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.alihussain2alikhan.bondus"
+      "bundleIdentifier": "com.alihussain2alikhan.bondus",
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#080E1D"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/splash.png",
+        "backgroundColor": "#080E1D"
       },
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "adjustResize",
-      "package": "com.alihussain2alikhan.bondus"
+      "package": "com.alihussain2alikhan.bondus",
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#080E1D"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
