@@ -529,9 +529,9 @@ export default function Profile({ navigation, route }) {
                 onPress={() => setActiveTab(i)}
               >
                 <Text style={[s.tabLabel, activeTab === i && s.tabLabelActive]}>
-                {tab === "About" ? t("profile.tabs.about")
-                  : tab === "Interests" ? t("profile.tabs.interests")
-                  : t("profile.tabs.more")}
+                  {tab === "About" ? t("profile.tabs.about")
+                    : tab === "Interests" ? t("profile.tabs.interests")
+                      : t("profile.tabs.more")}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -731,7 +731,8 @@ export default function Profile({ navigation, route }) {
                   style={s.qrBox}
                   activeOpacity={0.8}
                   onPress={async () => {
-                    const url = `https://bondus.vercel.app/${user.username}`;
+                    const identifier = user.username || user.id;
+                    const url = `https://bondus.vercel.app/${identifier}`;
                     try {
                       await Share.share({
                         message: t("profile.share_msg", { url: url }),
@@ -749,9 +750,10 @@ export default function Profile({ navigation, route }) {
                     style={s.qrInner}
                   >
                     <Feather name="link-2" size={32} color="#6366F1" />
-                    <Text style={s.qrUrl}>bondus.vercel.app/{user.username}</Text>
+                    <Text style={s.qrUrl}>bondus.vercel.app/{user.username || user.id}</Text>
                     <Text style={s.tapToShare}>{t("profile.tap_to_share")}</Text>
                   </LinearGradient>
+
                 </TouchableOpacity>
               </View>
             </View>

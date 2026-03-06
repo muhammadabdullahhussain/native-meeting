@@ -87,13 +87,20 @@ exports.getUser = catchAsync(async (req, res, next) => {
  */
 exports.getPublicProfileByUsername = catchAsync(async (req, res, next) => {
   const { username } = req.params;
+  const mongoose = require('mongoose');
 
-  const user = await require('../../models/User').findOne({ username: username.toLowerCase() })
+  let query = { username: username.toLowerCase() };
+  if (mongoose.Types.ObjectId.isValid(username)) {
+    query = { $or: [{ username: username.toLowerCase() }, { _id: username }] };
+  }
+
+  const user = await require('../../models/User').findOne(query)
     .select('name username avatar banner bio city jobTitle company interests isPremium lookingFor isVerified onlineStatus');
 
   if (!user) {
     return next(new AppError("User not found", 404));
   }
+
 
   res.status(200).json({
     success: true,
