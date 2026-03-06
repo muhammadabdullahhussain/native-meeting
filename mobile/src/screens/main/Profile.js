@@ -1935,6 +1935,8 @@ const s = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.bold,
     color: "#4F46E5",
     marginTop: 12,
+    textAlign: "center",
+    paddingHorizontal: 20,
   },
   tapToShare: {
     fontSize: 12,
