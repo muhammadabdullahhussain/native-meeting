@@ -26,11 +26,21 @@ async function getProfile(username: string) {
 }
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
+    console.log("Fetching profile for:", params.username);
     const profile = await getProfile(params.username);
+    console.log("Profile data received:", !!profile);
 
-    // If user doesn't exist, Next.js handles the 404 page automatically
     if (!profile) {
-        notFound();
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#080E1D] text-white">
+                <div className="text-center">
+                    <h1 className="text-4xl font-bold mb-4">Profile Not Found</h1>
+                    <p className="text-slate-400">Could not find profile for: {params.username}</p>
+                    <p className="text-xs text-slate-600 mt-4">API Base: {process.env.NEXT_PUBLIC_API_URL || "https://bondus-backend.onrender.com/api"}</p>
+                    <Link href="/" className="text-indigo-400 mt-8 inline-block hover:underline">Go Back Home</Link>
+                </div>
+            </div>
+        );
     }
 
     return (
