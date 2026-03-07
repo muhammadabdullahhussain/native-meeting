@@ -3,7 +3,11 @@ const AppError = require('../../utils/appError');
 const User = require('../../models/User');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const normalizeLabel = (value) => value.trim().replace(/\s+/g, ' ');
+const normalizeLabel = (value) =>
+    value.normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .replace(/\s+/g, ' ');
 
 /**
  * Get all interests (grouped by category)
@@ -18,7 +22,7 @@ exports.getAllInterests = async (req, res, next) => {
             category: int.category,
             subcategories: int.subcategories
                 .filter(sub => sub.isApproved)
-                .map(sub => sub.name)
+                .map(sub => normalizeLabel(sub.name))
                 .sort((a, b) => a.localeCompare(b))
         })).filter(item => item.subcategories.length > 0);
 

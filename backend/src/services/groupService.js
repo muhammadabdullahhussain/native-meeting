@@ -62,13 +62,16 @@ exports.joinGroup = async (groupId, userId) => {
     const user = await User.findById(userId);
 
     if (!user.isPremium) {
-        if (!user.unlockedGroupPasses || user.unlockedGroupPasses <= 0) {
-            throw new AppError('Invite 3 friends to unlock a Group Pass to join!', 403);
-        }
+        const myGroups = await Group.countDocuments({ 'members.user': userId });
+        if (myGroups >= 7) {
+            if (!user.unlockedGroupPasses || user.unlockedGroupPasses <= 0) {
+                throw new AppError('Invite 3 friends to unlock more Group Passes to join!', 403);
+            }
 
-        // Consume 1 Group Pass
-        user.unlockedGroupPasses -= 1;
-        await user.save();
+            // Consume 1 Group Pass
+            user.unlockedGroupPasses -= 1;
+            await user.save();
+        }
     }
 
     // Check capacity

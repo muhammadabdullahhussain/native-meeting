@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const socialAuthController = require('../controllers/socialAuthController');
 const { protect } = require('../middleware/authMiddleware');
 
 // @route   POST api/auth/register
@@ -8,6 +9,12 @@ router.post('/register', authController.register);
 
 // @route   POST api/auth/login
 router.post('/login', authController.login);
+
+// @route   POST api/auth/google
+router.post('/google', socialAuthController.googleLogin);
+
+// @route   POST api/auth/facebook
+router.post('/facebook', socialAuthController.facebookLogin);
 
 // @route   POST api/auth/check-email
 router.post('/check-email', authController.checkEmail);

@@ -16,9 +16,22 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Please provide a password'],
+        required: function () {
+            // Password is only required if no social login is provided
+            return !this.googleId && !this.facebookId;
+        },
         minlength: 6,
         select: false // Don't return password by default
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    facebookId: {
+        type: String,
+        unique: true,
+        sparse: true
     },
     avatar: {
         type: String,
